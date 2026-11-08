@@ -16,3 +16,4 @@ uploads/*
 .env*
 tests
 .DS_Store
+

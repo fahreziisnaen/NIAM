@@ -27,3 +27,4 @@ export function apiUrl(endpoint: string): string {
   const base = getApiBaseUrl();
   return `${base}${cleanEndpoint}`;
 }
+
