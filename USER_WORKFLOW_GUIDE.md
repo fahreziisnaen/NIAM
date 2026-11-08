@@ -23,6 +23,7 @@ This document serves as the official, comprehensive operational manual for the *
 12. [Notification Center & Outbound Alert Gateway (Email & API)](#12-notification-center--outbound-alert-gateway-email--api)
 13. [Mobile & Tablet On-Site Inspection Workflow](#13-mobile--tablet-on-site-inspection-workflow)
 14. [Troubleshooting & Operational FAQ](#14-troubleshooting--operational-faq)
+15. [Docker Compose Production Deployment & Operations](#15-docker-compose-production-deployment--operations)
 
 ---
 
@@ -534,6 +535,49 @@ The system is fully responsive, optimized for field engineers conducting datacen
 
 ### Q4: An outbound alert failed to dispatch via API.
 > **Solution**: Navigate to **Settings → System Configuration**, review the **Alert & Notification Gateway Integration** section, check whether the API Key has expired, verify the target phone number format, and click **Send Test Alert** to inspect the exact HTTP error code returned by the gateway.
+
+---
+
+## 15. Docker Compose Production Deployment & Operations
+
+### 15.1 Architecture Overview
+The production deployment packages the full stack into 3 lightweight, production-grade Docker containers:
+1. `phillip_postgres` (`postgres:16-alpine`): Stores all relational assets, contracts, IPAM, and alert rules.
+2. `phillip_backend` (`python:3.11-slim`): FastAPI REST API server, runs auto-seed on startup, listens on port 8000.
+3. `phillip_frontend` (`node:20-alpine`): Next.js 14 production runtime, listens on port 3000 and reverse-proxies API calls to `phillip_backend:8000`.
+
+### 15.2 Step-by-Step Production Deployment
+Run the following commands on your Linux Docker server (e.g., `dockerpshk`):
+
+```bash
+# 1. Update repository with latest commits
+git pull origin main
+
+# 2. Build images and launch all containers in detached mode
+docker compose up -d --build
+
+# 3. Verify all 3 services are running and healthy
+docker compose ps
+```
+
+### 15.3 Container Health & Log Monitoring
+To monitor real-time server output and startup initialization:
+```bash
+# Stream all logs
+docker compose logs -f
+
+# Inspect backend startup and database seeding logs specifically
+docker compose logs -f backend
+
+# Check PostgreSQL container health
+docker compose exec db pg_isready -U postgres
+```
+
+### 15.4 Default Enterprise Credentials
+Once containers are running, navigate to `http://<YOUR_SERVER_IP>:3000`:
+- **Username**: `admin`
+- **Password**: `Phillip2026!`
+- **Initial Role**: Super Administrator (VP of Infrastructure & Security)
 
 ---
 
