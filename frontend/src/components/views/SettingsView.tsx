@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing } from "lucide-react";
+import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle } from "lucide-react";
 import { TwoFactorSetupModal } from "@/components/auth/TwoFactorSetupModal";
 import { AlertRulesView } from "@/components/views/AlertRulesView";
 import { apiUrl } from "@/lib/api";
@@ -41,6 +41,21 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
   const [newRole, setNewRole] = useState("VIEWER");
   const [newPassword, setNewPassword] = useState("Phillip2026!");
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Edit User Form State
+  const [editUserOpen, setEditUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editDepartment, setEditDepartment] = useState("IT Infrastructure");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRole, setEditRole] = useState("VIEWER");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editNewPassword, setEditNewPassword] = useState("");
+  const [editReset2FA, setEditReset2FA] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // Alert & Notification Gateway Configuration State
   const [gatewayApiEndpoint, setGatewayApiEndpoint] = useState("https://api.gateway.com/send");
@@ -208,6 +223,92 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
     }
   };
 
+  const handleOpenEditUser = (u: any) => {
+    setSelectedUser(u);
+    setEditFullName(u.full_name || "");
+    setEditEmail(u.email || "");
+    setEditTitle(u.title || "");
+    setEditDepartment(u.department || "IT Infrastructure");
+    setEditPhone(u.phone || "");
+    setEditRole(u.roles?.[0] || "VIEWER");
+    setEditIsActive(u.is_active !== undefined ? Boolean(u.is_active) : true);
+    setEditNewPassword("");
+    setEditReset2FA(false);
+    setEditError(null);
+    setEditUserOpen(true);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setEditSubmitting(true);
+    setEditError(null);
+
+    const token = getAuthToken();
+    try {
+      const payload: any = {
+        full_name: editFullName.trim(),
+        email: editEmail.trim() || null,
+        title: editTitle.trim() || null,
+        department: editDepartment.trim() || null,
+        phone: editPhone.trim() || null,
+        role_name: editRole,
+        is_active: editIsActive,
+        reset_2fa: editReset2FA,
+      };
+
+      if (editNewPassword.trim()) {
+        payload.password = editNewPassword.trim();
+      }
+
+      const res = await fetch(apiUrl(`/api/v1/auth/users/${selectedUser.id}`), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to update user");
+      }
+
+      setEditUserOpen(false);
+      loadUsers();
+      loadAuditLogs();
+      if (onRefreshUser) onRefreshUser();
+    } catch (err: any) {
+      setEditError(err.message || "Failed to update user");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    if (!confirm(`Are you sure you want to permanently delete user account "${u.username}" (${u.full_name})?`)) {
+      return;
+    }
+    const token = getAuthToken();
+    try {
+      const res = await fetch(apiUrl(`/api/v1/auth/users/${u.id}`), {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Failed to delete user");
+        return;
+      }
+      loadUsers();
+      loadAuditLogs();
+      if (onRefreshUser) onRefreshUser();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete user");
+    }
+  };
+
   const handleDisable2FA = async () => {
     if (!confirm("Are you sure you want to disable Google Authenticator 2FA for this account?")) {
       return;
@@ -372,6 +473,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                     <th className="py-2.5 px-3">Assigned Role</th>
                     <th className="py-2.5 px-3">2FA Security</th>
                     <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -408,9 +510,36 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                         )}
                       </td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Active
-                        </span>
+                        {u.is_active !== false ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-300">
+                            Deactivated
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditUser(u)}
+                          className="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                          title="Edit User Details & Permissions"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
+                        {u.username !== "admin" && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u)}
+                            className="px-2 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 rounded-md transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                            title="Delete User Account"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -896,15 +1025,197 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                 <button
                   type="button"
                   onClick={() => setNewUserOpen(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
+                  className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm cursor-pointer"
                 >
                   Provision User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Enterprise User Modal */}
+      {editUserOpen && selectedUser && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <Edit2 className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Edit Enterprise User: <span className="font-mono text-blue-700">@{selectedUser.username}</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">Update account profile, credentials, role, and security</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditUserOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateUser} className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-700 block mb-1 font-semibold">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  placeholder="e.g. Fahrezi Fauzan"
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">
+                    Email Address (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="e.g. user@phillip.com.hk"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="+852 2277 6688"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">
+                    Job Title / Position
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="e.g. Lead Network Architect"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">
+                    Department
+                  </label>
+                  <input
+                    type="text"
+                    value={editDepartment}
+                    onChange={(e) => setEditDepartment(e.target.value)}
+                    placeholder="e.g. Network Engineering"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">Assigned Role *</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg bg-white focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                    <option value="NETWORK_ADMIN">NETWORK ADMIN</option>
+                    <option value="ASSET_MANAGER">ASSET MANAGER</option>
+                    <option value="CONTRACT_MANAGER">CONTRACT MANAGER</option>
+                    <option value="VIEWER">VIEWER</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">Account Status</label>
+                  <select
+                    value={editIsActive ? "active" : "inactive"}
+                    onChange={(e) => setEditIsActive(e.target.value === "active")}
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg bg-white focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="active">Active (Access Allowed)</option>
+                    <option value="inactive">Deactivated (Access Denied)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Security & Password Reset Sub-section */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                <div className="flex items-center space-x-1.5 text-slate-800 font-bold text-xs">
+                  <Lock className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Security & Credentials Management</span>
+                </div>
+
+                <div>
+                  <label className="text-slate-600 block mb-1 text-[11px]">
+                    Admin Reset Password (Leave blank to keep existing password)
+                  </label>
+                  <input
+                    type="password"
+                    value={editNewPassword}
+                    onChange={(e) => setEditNewPassword(e.target.value)}
+                    placeholder="Enter new password (min 6 chars)"
+                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="reset2faCheckbox"
+                    checked={editReset2FA}
+                    onChange={(e) => setEditReset2FA(e.target.checked)}
+                    className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 cursor-pointer"
+                  />
+                  <label htmlFor="reset2faCheckbox" className="text-slate-700 text-xs cursor-pointer select-none">
+                    Reset Google Authenticator 2FA (User must reconfigure 2FA on next login)
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setEditUserOpen(false)}
+                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>{editSubmitting ? "Saving..." : "Save User Changes"}</span>
                 </button>
               </div>
             </form>

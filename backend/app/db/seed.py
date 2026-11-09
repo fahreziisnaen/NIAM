@@ -20,8 +20,16 @@ def seed_database():
     db: Session = SessionLocal()
 
     # Check if already seeded
-    if db.query(User).filter_by(email="admin@phillip.com.hk").first():
-        print("[DB SEED] Database already populated. Ensuring alert rules and settings are initialized...")
+    if db.query(User).filter_by(username="admin").first():
+        print("[DB SEED] Database already populated. Ensuring user profiles and alert rules are up to date...")
+        admin_u = db.query(User).filter_by(username="admin").first()
+        if admin_u and admin_u.full_name != "Fahrezi Fauzan":
+            admin_u.full_name = "Fahrezi Fauzan"
+            db.commit()
+        netadmin_u = db.query(User).filter_by(username="netadmin").first()
+        if netadmin_u and netadmin_u.full_name != "John Zhang":
+            netadmin_u.full_name = "John Zhang"
+            db.commit()
         from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
         seed_default_rules(db)
         get_or_create_alert_settings(db)
@@ -47,8 +55,8 @@ def seed_database():
 
     # 2. USERS (Username & Password login, Email optional)
     users_data = [
-        ("admin", "admin@phillip.com.hk", "Phillip2026!", "Jason Davies", "VP of Infrastructure & Security", "IT Infrastructure", True, "SUPER_ADMIN"),
-        ("netadmin", "netadmin@phillip.com.hk", "Phillip2026!", "Raymond Wong", "Lead Network Architect", "Network Engineering", False, "NETWORK_ADMIN"),
+        ("admin", "admin@phillip.com.hk", "Phillip2026!", "Fahrezi Fauzan", "VP of Infrastructure & Security", "IT Infrastructure", True, "SUPER_ADMIN"),
+        ("netadmin", "netadmin@phillip.com.hk", "Phillip2026!", "John Zhang", "Lead Network Architect", "Network Engineering", False, "NETWORK_ADMIN"),
         ("assetmgr", "assetmgr@phillip.com.hk", "Phillip2026!", "Kelvin Chan", "IT Asset & Procurement Lead", "IT Operations", False, "ASSET_MANAGER"),
         ("contractmgr", "contractmgr@phillip.com.hk", "Phillip2026!", "Grace Liu", "Senior Vendor & Contract Manager", "Finance & Vendor Management", False, "CONTRACT_MANAGER"),
         ("viewer", "viewer@phillip.com.hk", "Phillip2026!", "Auditor Guest", "Compliance & Audit Specialist", "Internal Audit", False, "VIEWER")

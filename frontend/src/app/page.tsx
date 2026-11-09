@@ -267,6 +267,7 @@ export default function Home() {
         {/* Top White Header */}
         <Header
           currentUser={currentUser}
+          onRefreshUser={refreshUserProfile}
           onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
           onSearch={(query) => {
             setTableSearch(query);

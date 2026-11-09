@@ -31,6 +31,16 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     role_name: Optional[str] = None
     password: Optional[str] = None
+    reset_2fa: Optional[bool] = None
+
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    title: Optional[str] = None
+    department: Optional[str] = None
+    phone: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
 
 class UserOut(UserBase):
     id: int

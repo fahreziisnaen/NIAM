@@ -24,6 +24,13 @@ import {
   ChevronDown,
   BellRing,
   Sliders,
+  Edit2,
+  Save,
+  Lock,
+  Mail,
+  Phone,
+  Briefcase,
+  Check,
 } from "lucide-react";
 import {
   NotificationDetailModal,
@@ -35,6 +42,7 @@ interface HeaderProps {
   onOpenNotifications?: () => void;
   onOpenProfile?: () => void;
   currentUser?: any;
+  onRefreshUser?: () => void;
   onOpenTwoFactorSetup?: () => void;
   onLogout?: () => void;
   onNavigate?: (tab: string, sub?: string) => void;
@@ -46,6 +54,7 @@ export function Header({
   onOpenNotifications,
   onOpenProfile,
   currentUser,
+  onRefreshUser,
   onOpenTwoFactorSetup,
   onLogout,
   onNavigate,
@@ -89,7 +98,7 @@ export function Header({
   };
 
   const getInitials = (name?: string) => {
-    if (!name) return "JD";
+    if (!name) return "FF";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -97,11 +106,83 @@ export function Header({
     return name.slice(0, 2).toUpperCase();
   };
 
-  const displayName = currentUser?.full_name || "Jason Davies";
+  const displayName = currentUser?.full_name || "Fahrezi Fauzan";
   const displayUsername = currentUser?.username || "admin";
   const displayEmail = currentUser?.email || "admin@phillip.com.hk";
   const displayRole = currentUser?.roles?.[0] || (currentUser?.is_superuser ? "SUPER ADMIN" : "ADMIN");
   const is2FA = Boolean(currentUser?.is_two_factor_enabled);
+
+  // Profile Edit State
+  const [profileTab, setProfileTab] = useState<"overview" | "edit">("overview");
+  const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editDepartment, setEditDepartment] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUser) {
+      setEditFullName(currentUser.full_name || "");
+      setEditEmail(currentUser.email || "");
+      setEditTitle(currentUser.title || "");
+      setEditDepartment(currentUser.department || "IT Infrastructure");
+      setEditPhone(currentUser.phone || "");
+    }
+  }, [currentUser, showProfileModal]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileError(null);
+    setProfileMessage(null);
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("phillip_token") : null;
+    try {
+      const res = await fetch(apiUrl("/api/v1/auth/me"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          full_name: editFullName.trim(),
+          email: editEmail.trim() || null,
+          title: editTitle.trim() || null,
+          department: editDepartment.trim() || null,
+          phone: editPhone.trim() || null,
+          current_password: currentPassword.trim() || null,
+          new_password: newPassword.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to update profile");
+      }
+
+      if (typeof window !== "undefined") {
+        const storedUser = localStorage.getItem("phillip_user");
+        if (storedUser) {
+          const userObj = JSON.parse(storedUser);
+          localStorage.setItem("phillip_user", JSON.stringify({ ...userObj, ...data }));
+        }
+      }
+
+      setProfileMessage("Your profile information has been successfully updated!");
+      setCurrentPassword("");
+      setNewPassword("");
+      if (onRefreshUser) onRefreshUser();
+    } catch (err: any) {
+      setProfileError(err.message || "An error occurred while saving your profile");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -425,12 +506,27 @@ export function Header({
                       type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
+                        setProfileTab("overview");
                         setShowProfileModal(true);
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg flex items-center space-x-2 transition-colors cursor-pointer"
                     >
                       <User className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                       <span>User Profile Overview</span>
+                    </button>
+
+                    {/* 2. Edit Profile */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setProfileTab("edit");
+                        setShowProfileModal(true);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 rounded-lg flex items-center space-x-2 transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>Edit My Profile</span>
                     </button>
 
                     {/* 2. Manage 2FA */}
@@ -537,85 +633,272 @@ export function Header({
         }}
       />
 
-      {/* User Profile Overview Modal */}
+      {/* User Profile Overview & Edit Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <User className="w-5 h-5 text-blue-600" />
-                <h3 className="text-sm font-bold text-slate-900">User Profile Overview</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  {profileTab === "overview" ? "User Profile Overview" : "Edit Profile Information"}
+                </h3>
               </div>
               <button
-                onClick={() => setShowProfileModal(false)}
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setProfileError(null);
+                  setProfileMessage(null);
+                }}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-12 h-12 rounded-full bg-[#0A192F] text-white font-bold text-sm flex items-center justify-center shrink-0">
-                  {getInitials(displayName)}
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{displayName}</h4>
-                  <p className="text-[11px] font-mono text-slate-500">@{displayUsername}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
-                    {displayRole}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 p-3 bg-white border border-slate-200 rounded-xl">
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">EMAIL (OPTIONAL)</span>
-                  <span className="text-slate-800 font-medium truncate block">{displayEmail}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">GOOGLE 2FA STATUS</span>
-                  <span className={`inline-flex items-center text-[11px] font-bold ${is2FA ? "text-emerald-700" : "text-amber-600"}`}>
-                    {is2FA ? "Active (TOTP Protected)" : "Disabled (Setup Recommended)"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">PRIMARY SITE</span>
-                  <span className="text-slate-800 font-medium">Exchange Square HQ, HK</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold">ORGANIZATION</span>
-                  <span className="text-slate-800 font-medium">Phillip Securities HK</span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-blue-50/60 border border-blue-200/60 rounded-xl space-y-1">
-                <span className="text-[11px] font-bold text-blue-900 block">Security Privileges:</span>
-                <p className="text-[10px] text-blue-800 leading-relaxed">
-                  Full administrative access to network inventory, hardware lifecycle tracking, 42U rack telemetry, IPAM allocations, contracts, and outbound alert gateway dispatch.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            {/* Mode Toggle Tabs */}
+            <div className="flex items-center space-x-1 p-1 bg-slate-100 rounded-xl">
               <button
                 type="button"
                 onClick={() => {
-                  setShowProfileModal(false);
-                  if (onOpenTwoFactorSetup) onOpenTwoFactorSetup();
+                  setProfileTab("overview");
+                  setProfileError(null);
+                  setProfileMessage(null);
                 }}
-                className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  profileTab === "overview"
+                    ? "bg-white text-blue-700 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
               >
-                {is2FA ? "Manage 2FA" : "Configure 2FA"}
+                Profile Overview
               </button>
               <button
                 type="button"
-                onClick={() => setShowProfileModal(false)}
-                className="px-4 py-1.5 text-xs font-semibold text-white bg-[#1E60D5] hover:bg-blue-700 rounded-lg transition-colors cursor-pointer"
+                onClick={() => {
+                  setProfileTab("edit");
+                  setProfileError(null);
+                  setProfileMessage(null);
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                  profileTab === "edit"
+                    ? "bg-white text-blue-700 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
               >
-                Close
+                <Edit2 className="w-3.5 h-3.5" />
+                <span>Edit Profile Details</span>
               </button>
             </div>
+
+            {/* Notification Banners */}
+            {profileMessage && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center space-x-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{profileMessage}</span>
+              </div>
+            )}
+            {profileError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{profileError}</span>
+              </div>
+            )}
+
+            {/* Tab 1: Overview */}
+            {profileTab === "overview" && (
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="w-12 h-12 rounded-full bg-[#0A192F] text-white font-bold text-sm flex items-center justify-center shrink-0">
+                    {getInitials(displayName)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{displayName}</h4>
+                    <p className="text-[11px] font-mono text-slate-500">@{displayUsername}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
+                      {displayRole}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 p-3 bg-white border border-slate-200 rounded-xl">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">EMAIL</span>
+                    <span className="text-slate-800 font-medium truncate block">{displayEmail}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">JOB TITLE</span>
+                    <span className="text-slate-800 font-medium truncate block">{currentUser?.title || "VP of Infrastructure & Security"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">DEPARTMENT</span>
+                    <span className="text-slate-800 font-medium truncate block">{currentUser?.department || "IT Infrastructure"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">PHONE</span>
+                    <span className="text-slate-800 font-medium truncate block">{currentUser?.phone || "+852 2277 6688"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">GOOGLE 2FA STATUS</span>
+                    <span className={`inline-flex items-center text-[11px] font-bold ${is2FA ? "text-emerald-700" : "text-amber-600"}`}>
+                      {is2FA ? "Active (TOTP Protected)" : "Disabled (Setup Recommended)"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">PRIMARY SITE</span>
+                    <span className="text-slate-800 font-medium">Exchange Square HQ, HK</span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-blue-50/60 border border-blue-200/60 rounded-xl space-y-1">
+                  <span className="text-[11px] font-bold text-blue-900 block">Security Privileges:</span>
+                  <p className="text-[10px] text-blue-800 leading-relaxed">
+                    Full administrative access to network inventory, hardware lifecycle tracking, 42U rack telemetry, IPAM allocations, contracts, and outbound alert gateway dispatch.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setProfileTab("edit")}
+                    className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center space-x-1.5 cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit Profile Data</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      if (onOpenTwoFactorSetup) onOpenTwoFactorSetup();
+                    }}
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {is2FA ? "Manage 2FA" : "Configure 2FA"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Edit Form */}
+            {profileTab === "edit" && (
+              <form onSubmit={handleSaveProfile} className="space-y-3 text-xs">
+                <div>
+                  <label className="text-slate-700 block mb-1 font-semibold">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    placeholder="e.g. Fahrezi Fauzan"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-slate-700 block mb-1 font-semibold">
+                      Email Address (Optional)
+                    </label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      placeholder="e.g. fahrezi@phillip.com.hk"
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-700 block mb-1 font-semibold">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="+852 2277 6688"
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-slate-700 block mb-1 font-semibold">
+                      Job Title / Designation
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="VP of Infrastructure & Security"
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-700 block mb-1 font-semibold">
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      value={editDepartment}
+                      onChange={(e) => setEditDepartment(e.target.value)}
+                      placeholder="IT Infrastructure"
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Password Change Section */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <span className="text-[11px] font-bold text-slate-800 block">
+                    Change Password (Optional)
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-slate-600 block mb-1 text-[11px]">Current Password</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Required to change password"
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-600 block mb-1 text-[11px]">New Password</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Min 6 characters"
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setProfileTab("overview")}
+                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                  >
+                    Back to Overview
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={profileSaving}
+                    className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{profileSaving ? "Saving..." : "Save Profile Changes"}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

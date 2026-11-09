@@ -11,7 +11,7 @@ from app.db.session import get_db
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.models.user import User, Role, UserRole, AuditLog, Notification
 from app.schemas.user import (
-    UserLogin, Token, UserOut, UserCreate, UserUpdate,
+    UserLogin, Token, UserOut, UserCreate, UserUpdate, ProfileUpdate,
     TwoFactorSetupResponse, TwoFactorVerifyRequest
 )
 from app.api.deps import get_current_user, require_role
@@ -164,6 +164,173 @@ def create_new_user(
     db.refresh(user)
 
     return format_user_out(user)
+
+@router.put("/me", response_model=UserOut)
+def update_own_profile(
+    profile_in: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required to update profile")
+
+    if profile_in.full_name is not None and profile_in.full_name.strip():
+        current_user.full_name = profile_in.full_name.strip()
+
+    if profile_in.email is not None:
+        clean_email = profile_in.email.strip() if profile_in.email.strip() else None
+        if clean_email:
+            existing = db.query(User).filter(
+                func.lower(User.email) == clean_email.lower(),
+                User.id != current_user.id
+            ).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Email is already used by another account")
+        current_user.email = clean_email
+
+    if profile_in.title is not None:
+        current_user.title = profile_in.title.strip() if profile_in.title.strip() else None
+
+    if profile_in.department is not None:
+        current_user.department = profile_in.department.strip() if profile_in.department.strip() else None
+
+    if profile_in.phone is not None:
+        current_user.phone = profile_in.phone.strip() if profile_in.phone.strip() else None
+
+    # Handle password change
+    if profile_in.new_password and profile_in.new_password.strip():
+        if not profile_in.current_password:
+            raise HTTPException(status_code=400, detail="Current password is required to change password")
+        if not verify_password(profile_in.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        if len(profile_in.new_password.strip()) < 6:
+            raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+        current_user.hashed_password = get_password_hash(profile_in.new_password.strip())
+
+    try:
+        audit = AuditLog(
+            user_id=current_user.id,
+            user_email=current_user.email or current_user.username,
+            action="UPDATE",
+            entity_type="USER_PROFILE",
+            entity_id=str(current_user.id),
+            details=f"User {current_user.username} updated profile details (Name: {current_user.full_name})",
+            ip_address="127.0.0.1"
+        )
+        db.add(audit)
+        db.commit()
+        db.refresh(current_user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error while updating profile: {e}")
+
+    return format_user_out(current_user)
+
+@router.put("/users/{user_id}", response_model=UserOut)
+def update_user_by_admin(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["SUPER_ADMIN"]))
+):
+    target_user = db.query(User).filter_by(id=user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user_in.full_name is not None and user_in.full_name.strip():
+        target_user.full_name = user_in.full_name.strip()
+
+    if user_in.email is not None:
+        clean_email = user_in.email.strip() if user_in.email.strip() else None
+        if clean_email:
+            existing = db.query(User).filter(
+                func.lower(User.email) == clean_email.lower(),
+                User.id != target_user.id
+            ).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Email is already used by another account")
+        target_user.email = clean_email
+
+    if user_in.title is not None:
+        target_user.title = user_in.title.strip() if user_in.title.strip() else None
+
+    if user_in.department is not None:
+        target_user.department = user_in.department.strip() if user_in.department.strip() else None
+
+    if user_in.phone is not None:
+        target_user.phone = user_in.phone.strip() if user_in.phone.strip() else None
+
+    if user_in.is_active is not None:
+        target_user.is_active = user_in.is_active
+
+    # Super Admin can change user role
+    if user_in.role_name:
+        role = db.query(Role).filter_by(name=user_in.role_name).first()
+        if role:
+            db.query(UserRole).filter_by(user_id=target_user.id).delete()
+            db.add(UserRole(user_id=target_user.id, role_id=role.id))
+
+    # Super Admin password reset
+    if user_in.password and user_in.password.strip():
+        if len(user_in.password.strip()) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        target_user.hashed_password = get_password_hash(user_in.password.strip())
+
+    # Super Admin 2FA reset
+    if user_in.reset_2fa:
+        target_user.is_two_factor_enabled = False
+        target_user.two_factor_secret = None
+
+    try:
+        audit = AuditLog(
+            user_id=current_user.id,
+            user_email=current_user.email or current_user.username,
+            action="UPDATE",
+            entity_type="USER",
+            entity_id=str(target_user.id),
+            details=f"Admin {current_user.username} updated user {target_user.username} (Name: {target_user.full_name})",
+            ip_address="127.0.0.1"
+        )
+        db.add(audit)
+        db.commit()
+        db.refresh(target_user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error while updating user: {e}")
+
+    return format_user_out(target_user)
+
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["SUPER_ADMIN"]))
+):
+    target_user = db.query(User).filter_by(id=user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if target_user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own super administrator account")
+    if target_user.username == "admin":
+        raise HTTPException(status_code=400, detail="Cannot delete root system administrator account")
+
+    deleted_username = target_user.username
+    db.delete(target_user)
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        user_email=current_user.email or current_user.username,
+        action="DELETE",
+        entity_type="USER",
+        entity_id=str(user_id),
+        details=f"Admin {current_user.username} deleted user account {deleted_username}",
+        ip_address="127.0.0.1"
+    )
+    db.add(audit)
+    db.commit()
+
+    return {"status": "success", "message": f"User {deleted_username} deleted successfully"}
 
 # ----------------------------------------------------
 # TWO-FACTOR AUTHENTICATION (2FA - GOOGLE AUTHENTICATOR)
