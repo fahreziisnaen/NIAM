@@ -13,6 +13,14 @@ class VLANBase(BaseModel):
 class VLANCreate(VLANBase):
     pass
 
+class VLANUpdate(BaseModel):
+    vlan_id: Optional[int] = None
+    name: Optional[str] = None
+    subnet: Optional[str] = None
+    gateway: Optional[str] = None
+    location_id: Optional[int] = None
+    description: Optional[str] = None
+
 class VLANOut(VLANBase):
     id: int
     created_at: Optional[datetime] = None
@@ -36,6 +44,18 @@ class IPAddressBase(BaseModel):
 class IPAddressCreate(IPAddressBase):
     pass
 
+class IPAddressUpdate(BaseModel):
+    ip_address: Optional[str] = None
+    ip_version: Optional[str] = None
+    subnet: Optional[str] = None
+    vlan_id: Optional[int] = None
+    status: Optional[str] = None
+    asset_id: Optional[int] = None
+    hostname: Optional[str] = None
+    mac_address: Optional[str] = None
+    interface_name: Optional[str] = None
+    description: Optional[str] = None
+
 class IPAddressOut(IPAddressBase):
     id: int
     updated_at: Optional[datetime] = None
@@ -56,6 +76,16 @@ class ConnectionBase(BaseModel):
 class ConnectionCreate(ConnectionBase):
     pass
 
+class ConnectionUpdate(BaseModel):
+    source_asset_id: Optional[int] = None
+    source_port: Optional[str] = None
+    target_asset_id: Optional[int] = None
+    target_port: Optional[str] = None
+    connection_type: Optional[str] = None
+    bandwidth_gbps: Optional[str] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
 class ConnectionOut(ConnectionBase):
     id: int
     created_at: Optional[datetime] = None
@@ -68,4 +98,3 @@ class ConnectionOut(ConnectionBase):
 
     class Config:
         from_attributes = True
-
