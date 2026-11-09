@@ -32,14 +32,11 @@ def get_dashboard_statistics(
         query = query.filter(Asset.ownership_type == ownership)
 
     total_assets = query.count()
-    if total_assets == 0:
-        total_assets = 1248  # safety fallback
-
     company_owned = query.filter(Asset.ownership_type.ilike("%Company%")).count()
     rental_leased = query.filter(Asset.ownership_type.in_(["Rental", "Leased"])).count()
     
-    company_pct = round((company_owned / total_assets) * 100, 1) if total_assets > 0 else 70.2
-    rental_pct = round((rental_leased / total_assets) * 100, 1) if total_assets > 0 else 29.8
+    company_pct = round((company_owned / total_assets) * 100, 1) if total_assets > 0 else 0.0
+    rental_pct = round((rental_leased / total_assets) * 100, 1) if total_assets > 0 else 0.0
 
     # Contracts
     active_contracts = db.query(Contract).filter(Contract.status.in_(["Active", "Expiring Soon"])).count()
@@ -50,15 +47,11 @@ def get_dashboard_statistics(
         Contract.end_date <= in_90_days,
         Contract.end_date >= today
     ).count()
-    if contracts_expiring_soon == 0:
-        contracts_expiring_soon = 8
 
     # Warranties
     warranties_expiring_90d = db.query(Warranty).filter(
         Warranty.status == "Expiring Soon"
     ).count()
-    if warranties_expiring_90d == 0:
-        warranties_expiring_90d = 14
 
     # Deployed vs Maintenance
     deployed_count = query.filter(Asset.operational_status == "Deployed").count()

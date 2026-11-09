@@ -224,32 +224,34 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   )}
                 </button>
 
-                {/* Quick-Fill Demo Credentials */}
-                <div className="pt-4 border-t border-slate-100">
-                  <p className="text-[11px] font-semibold text-slate-400 mb-2">
-                    Quick Sign-In Accounts (Demo):
-                  </p>
-                  <div className="space-y-1.5">
-                    {demoAccounts.map((acc) => (
-                      <button
-                        key={acc.username}
-                        type="button"
-                        onClick={() => handleQuickFill(acc.username)}
-                        className={`w-full text-left px-3 py-1.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
-                          username === acc.username
-                            ? "bg-blue-50 border-blue-300 text-blue-800"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                        }`}
-                      >
-                        <span className="font-mono font-medium">{acc.username}</span>
-                        <span className="text-[10px] text-slate-400">{acc.role}</span>
-                      </button>
-                    ))}
+                {/* Quick-Fill Demo Credentials (Hidden when NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS=false) */}
+                {process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS !== "false" && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-[11px] font-semibold text-slate-400 mb-2">
+                      Quick Sign-In Accounts (Demo):
+                    </p>
+                    <div className="space-y-1.5">
+                      {demoAccounts.map((acc) => (
+                        <button
+                          key={acc.username}
+                          type="button"
+                          onClick={() => handleQuickFill(acc.username)}
+                          className={`w-full text-left px-3 py-1.5 rounded-lg border text-xs flex items-center justify-between transition-colors ${
+                            username === acc.username
+                              ? "bg-blue-50 border-blue-300 text-blue-800"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <span className="font-mono font-medium">{acc.username}</span>
+                          <span className="text-[10px] text-slate-400">{acc.role}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-slate-400 text-center mt-2">
+                      Default password: <code className="font-mono font-bold text-slate-600">Phillip2026!</code>
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-400 text-center mt-2">
-                    Default password: <code className="font-mono font-bold text-slate-600">Phillip2026!</code>
-                  </p>
-                </div>
+                )}
               </form>
             ) : (
               /* Step 2: Google Authenticator 2FA Verification */

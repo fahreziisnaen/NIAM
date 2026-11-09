@@ -35,6 +35,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-phillip-securities-hk-super-secret-key-2026-production}
       API_V1_STR: /api/v1
       UPLOAD_DIR: /app/uploads
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
     ports:
       - "8000:8000"
     volumes:
@@ -51,6 +52,7 @@ services:
       - backend
     environment:
       INTERNAL_BACKEND_URL: http://backend:8000
+      NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-true}
       NODE_ENV: production
       PORT: 3000
     ports:

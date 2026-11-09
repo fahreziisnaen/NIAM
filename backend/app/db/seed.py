@@ -242,6 +242,17 @@ def seed_database():
         models_dict[m_name] = dm
     db.flush()
 
+    # Check if demo dataset should be seeded or if we should keep it clean for production
+    seed_demo = os.getenv("SEED_DEMO_DATA", "true").lower() in ["true", "1", "yes"]
+    if not seed_demo:
+        from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
+        seed_default_rules(db)
+        get_or_create_alert_settings(db)
+        db.commit()
+        db.close()
+        print("[DB SEED] Production clean baseline initialized successfully. (SEED_DEMO_DATA=false: Zero demo assets or dump contracts created).")
+        return
+
     # 8. CONTRACTS (32 active contracts matching KPI, with 8 expiring within 90 days)
     today = datetime.date(2025, 11, 7)
     contracts_list = []
