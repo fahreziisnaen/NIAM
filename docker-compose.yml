@@ -36,6 +36,8 @@ services:
       API_V1_STR: /api/v1
       UPLOAD_DIR: /app/uploads
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      APP_ENV: ${APP_ENV:-demo}
+      SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-true}
     ports:
       - "8000:8000"
     volumes:
