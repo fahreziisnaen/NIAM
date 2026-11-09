@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import List, Optional
+import os
 import pyotp
 import qrcode
 import io
@@ -34,6 +35,15 @@ def format_user_out(user: User) -> UserOut:
         created_at=user.created_at,
         roles=roles
     )
+
+@router.get("/system-config")
+def get_system_auth_config():
+    show_demo = os.getenv("SHOW_DEMO_CREDENTIALS", "true").lower() in ["true", "1", "yes"]
+    app_env = os.getenv("APP_ENV", "demo").lower()
+    return {
+        "show_demo_credentials": show_demo and app_env != "production",
+        "app_env": app_env
+    }
 
 @router.post("/login", response_model=Token)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):

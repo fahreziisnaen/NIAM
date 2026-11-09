@@ -20,6 +20,21 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [showDemoAccounts, setShowDemoAccounts] = useState<boolean>(() => {
+    return process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS !== "false";
+  });
+
+  React.useEffect(() => {
+    fetch(apiUrl("/api/v1/auth/system-config"))
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.show_demo_credentials === "boolean") {
+          setShowDemoAccounts(data.show_demo_credentials);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Quick fill accounts for testing
   const demoAccounts = [
     { username: "admin", label: "Super Admin (Fahrezi Fauzan)", role: "SUPER_ADMIN" },
@@ -224,8 +239,8 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   )}
                 </button>
 
-                {/* Quick-Fill Demo Credentials (Hidden when NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS=false) */}
-                {process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS !== "false" && (
+                {/* Quick-Fill Demo Credentials (Auto-detected from system-config & environment) */}
+                {showDemoAccounts && (
                   <div className="pt-4 border-t border-slate-100">
                     <p className="text-[11px] font-semibold text-slate-400 mb-2">
                       Quick Sign-In Accounts (Demo):
