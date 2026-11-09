@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Globe,
   Package,
+  Network,
   X,
 } from "lucide-react";
 import { HKSkyline } from "../common/HKSkyline";
@@ -28,6 +29,7 @@ export type NavItem =
   | "locations"
   | "topology"
   | "ipam"
+  | "b2b"
   | "maintenance"
   | "spares"
   | "reports"
@@ -356,7 +358,20 @@ export function Sidebar({
               <span>IP Address Management</span>
             </button>
 
-            {/* 8. Maintenance */}
+            {/* 8. B2B Connections */}
+            <button
+              onClick={() => handleNavClick("b2b")}
+              className={`w-full flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+                currentTab === "b2b"
+                  ? "bg-[#1E60D5] text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <Network className="w-4 h-4 mr-3 shrink-0" />
+              <span>B2B Connections</span>
+            </button>
+
+            {/* 9. Maintenance */}
             <button
               onClick={() => handleNavClick("maintenance")}
               className={`w-full flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-colors cursor-pointer ${

@@ -5,6 +5,7 @@ from app.models.contract import Contract, AssetContract, Warranty
 from app.models.network import NetworkConnection, IPAddress, VLAN
 from app.models.maintenance import MaintenanceRecord
 from app.models.inventory import SparePart, SpareStockTransaction
+from app.models.b2b_connection import B2BConnection
 from app.models.user import AuditLog, Notification
 
 def purge_demo_data():
@@ -24,10 +25,11 @@ def purge_demo_data():
         print(f" -> Removed {cnt_ac} asset-contract links, {cnt_ct} contracts, {cnt_wr} warranties")
 
         # 2. Delete network topology & IPAM dump
+        cnt_b2b = db.query(B2BConnection).delete()
         cnt_nc = db.query(NetworkConnection).delete()
         cnt_ip = db.query(IPAddress).delete()
         cnt_vl = db.query(VLAN).delete()
-        print(f" -> Removed {cnt_nc} topology interconnects, {cnt_ip} IP addresses, {cnt_vl} VLANs")
+        print(f" -> Removed {cnt_b2b} B2B connections, {cnt_nc} topology interconnects, {cnt_ip} IP addresses, {cnt_vl} VLANs")
 
         # 3. Delete maintenance and spare parts dump
         cnt_mr = db.query(MaintenanceRecord).delete()

@@ -7,4 +7,5 @@ from app.models.asset import DeviceCategory, DeviceModel, OwnershipType, Asset, 
 from app.models.network import VLAN, IPAddress, NetworkConnection
 from app.models.maintenance import MaintenanceRecord
 from app.models.inventory import SparePart, SpareStockTransaction
+from app.models.b2b_connection import B2BConnection
 

@@ -33,6 +33,8 @@ def seed_database():
         from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
         seed_default_rules(db)
         get_or_create_alert_settings(db)
+        from app.db.seed_b2b import seed_b2b_connections
+        seed_b2b_connections(db)
         db.close()
         return
 
@@ -860,6 +862,10 @@ def seed_database():
     print("[DB SEED] Seeding default enterprise alert rules and settings...")
     seed_default_rules(db)
     get_or_create_alert_settings(db)
+
+    # 16. B2B CONNECTION PROFILES
+    from app.db.seed_b2b import seed_b2b_connections
+    seed_b2b_connections(db)
 
     db.close()
     print("[DB SEED] Complete! Database populated successfully with high-fidelity Phillip Securities HK enterprise data.")

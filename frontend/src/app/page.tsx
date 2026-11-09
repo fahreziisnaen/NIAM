@@ -31,6 +31,7 @@ import { VendorsView } from "@/components/views/VendorsView";
 import { LocationsView } from "@/components/views/LocationsView";
 import { TopologyView } from "@/components/views/TopologyView";
 import { IPAMView } from "@/components/views/IPAMView";
+import { B2BConnectionsView } from "@/components/views/B2BConnectionsView";
 import { MaintenanceView } from "@/components/views/MaintenanceView";
 import { SparesView } from "@/components/views/SparesView";
 import { ReportsView } from "@/components/views/ReportsView";
@@ -476,6 +477,9 @@ export default function Home() {
 
           {/* IPAM MODULE */}
           {currentTab === "ipam" && <IPAMView />}
+
+          {/* B2B CONNECTIONS MODULE */}
+          {currentTab === "b2b" && <B2BConnectionsView />}
 
           {/* MAINTENANCE MODULE */}
           {currentTab === "maintenance" && <MaintenanceView />}
