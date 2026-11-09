@@ -63,3 +63,4 @@ export const PUT = handleProxy;
 export const DELETE = handleProxy;
 export const PATCH = handleProxy;
 export const OPTIONS = handleProxy;
+
