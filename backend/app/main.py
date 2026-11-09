@@ -1,11 +1,14 @@
 import os
-from fastapi import FastAPI
+import traceback
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.db.session import engine, Base
 import app.db.base  # ensure all models registered
+from app.db.seed import seed_database
 from app.api.v1 import (
     auth,
     dashboard,
@@ -61,6 +64,21 @@ app.include_router(alerts.router, prefix=settings.API_V1_STR)
 if os.path.exists(settings.UPLOAD_DIR):
     app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
+# Global Exception Handler to capture unhandled 500 errors with full trace
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    err_tb = traceback.format_exc()
+    print(f"[FATAL BACKEND ERROR] Unhandled {type(exc).__name__} on {request.method} {request.url}:\n{err_tb}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": str(exc),
+            "error_type": type(exc).__name__,
+            "path": str(request.url.path),
+            "message": "An internal server error occurred in the backend service. Check server container logs for traceback."
+        }
+    )
+
 @app.get("/health", tags=["System"])
 def health_check():
     return {
@@ -73,5 +91,11 @@ def health_check():
 @app.on_event("startup")
 def on_startup():
     # Ensure tables exist
+    print("[Startup] Ensuring database schema and tables exist...")
     Base.metadata.create_all(bind=engine)
+    try:
+        print("[Startup] Verifying baseline reference data...")
+        seed_database()
+    except Exception as e:
+        print(f"[Startup Warning] Seed check encountered exception (may already be seeded): {e}")
 

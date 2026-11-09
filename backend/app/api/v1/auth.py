@@ -19,7 +19,7 @@ from app.api.deps import get_current_user, require_role
 router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
 
 def format_user_out(user: User) -> UserOut:
-    roles = [ur.role.name for ur in user.roles]
+    roles = [ur.role.name for ur in user.roles if ur and ur.role and ur.role.name]
     return UserOut(
         id=user.id,
         username=user.username,
@@ -76,18 +76,22 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
                 detail="Invalid Google Authenticator code. Please check the 6-digit code on your app and try again."
             )
 
-    # Log successful login
-    audit = AuditLog(
-        user_id=user.id,
-        user_email=user.email or user.username,
-        action="LOGIN",
-        entity_type="USER",
-        entity_id=str(user.id),
-        details=f"User {user.username} authenticated successfully (2FA: {'Active' if user.is_two_factor_enabled else 'Disabled'})",
-        ip_address="127.0.0.1"
-    )
-    db.add(audit)
-    db.commit()
+    # Log successful login (fail-safe so audit log write cannot block authentication)
+    try:
+        audit = AuditLog(
+            user_id=user.id,
+            user_email=user.email or user.username,
+            action="LOGIN",
+            entity_type="USER",
+            entity_id=str(user.id),
+            details=f"User {user.username} authenticated successfully (2FA: {'Active' if user.is_two_factor_enabled else 'Disabled'})",
+            ip_address="127.0.0.1"
+        )
+        db.add(audit)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[Warning] Could not persist login audit log: {e}")
 
     token = create_access_token(subject=user.id)
     return Token(
