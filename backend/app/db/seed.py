@@ -607,19 +607,71 @@ def seed_database():
     # 10. ASSOCIATE CONTRACTS AND WARRANTIES
     print("[DB SEED] Generating contracts, warranties, and maintenance records...")
     
-    # Contract associations: link contracts to assets
+    # Contract associations: link contracts to assets based on realistic vendor, category, and ownership matching
     asset_contracts = []
     warranties = []
     maintenance_records = []
     
+    # Categorize saved assets for realistic contract linking
+    cisco_assets = [a for a in saved_assets if a.manufacturer == 'Cisco']
+    palo_assets = [a for a in saved_assets if a.manufacturer == 'Palo Alto']
+    aruba_assets = [a for a in saved_assets if a.manufacturer == 'Aruba']
+    fortinet_assets = [a for a in saved_assets if a.manufacturer == 'Fortinet']
+    juniper_assets = [a for a in saved_assets if a.manufacturer == 'Juniper']
+    huawei_assets = [a for a in saved_assets if a.manufacturer == 'Huawei']
+    checkpoint_assets = [a for a in saved_assets if a.manufacturer == 'Check Point']
+    f5_assets = [a for a in saved_assets if a.manufacturer == 'F5']
+    arista_assets = [a for a in saved_assets if a.manufacturer == 'Arista']
+    rental_assets = [a for a in saved_assets if a.ownership_type in ['Rental', 'Leased']]
+    mega_i_assets = [a for a in saved_assets if a.location and 'DC1' in (a.location.code or '')]
+    pccw_assets = [a for a in saved_assets if a.location and 'DC2' in (a.location.code or '')]
+
+    contracts_by_idx = {i: c for i, c in enumerate(created_contracts)}
+
+    def link_contract(c_idx, asset_list, note='Hardware Support & SLA Coverage'):
+        if c_idx in contracts_by_idx:
+            c = contracts_by_idx[c_idx]
+            for a in asset_list:
+                asset_contracts.append(AssetContract(asset_id=a.id, contract_id=c.id, coverage_notes=note))
+
+    # Realistically distribute devices across contracts
+    link_contract(0, palo_assets[:38], '24x7 WildFire Cloud Threat Prevention')
+    link_contract(23, palo_assets[38:], '24x7x4hr Mission Critical TAC & Spare Delivery')
+    link_contract(1, cisco_assets[:240], 'Cisco SMARTnet 24x7x4 On-site Parts & Labor')
+    link_contract(22, cisco_assets[240:], 'Cisco Edge Switching & Wi-Fi SLA Coverage')
+    link_contract(2, rental_assets[:38], 'HKT Leased CPE Router & Metro Switch Rental')
+    link_contract(11, rental_assets[38:72], 'HKT Enterprise Network Infrastructure Maintenance')
+    link_contract(19, rental_assets[72:100], 'HKT Dedicated Internet Access Hardware Support')
+    link_contract(3, fortinet_assets[:48], 'FortiCare 24x7 Security Fabric Subscription')
+    link_contract(20, fortinet_assets[48:], 'FortiGate Secure SD-WAN Appliance Lease')
+    link_contract(4, huawei_assets[:60], 'Huawei Care 24x7x4 Mission Critical Support')
+    link_contract(24, huawei_assets[60:115], 'Huawei Enterprise Campus Switching Support')
+    link_contract(29, huawei_assets[115:], 'Huawei Leased Switch & Router Agreement')
+    link_contract(5, aruba_assets[:72], 'Aruba Central Cloud Management & Firmware Subscription')
+    link_contract(14, aruba_assets[72:94], 'Aruba Foundation Care 24x7x4hr Replacement')
+    link_contract(17, aruba_assets[94:], 'Aruba Campus Switching Purchase & Warranty')
+    link_contract(6, juniper_assets[:98], 'Juniper Care 24x7x4hr Mission Critical Core Support')
+    link_contract(16, juniper_assets[98:], 'Juniper EX Series Campus Switching Warranty')
+    link_contract(7, rental_assets[100:152], 'Equinix HK1/HK2 Leased Cabinet Switch & Interconnect SLA')
+    link_contract(27, rental_assets[152:190], 'Equinix Facility Switching Infrastructure Maintenance')
+    link_contract(28, rental_assets[190:222], 'Equinix Datacenter Cross-Connect & Patch Lease')
+    link_contract(8, checkpoint_assets[:18], 'Check Point Direct Support & Quantum Threat Prevention')
+    link_contract(26, checkpoint_assets[18:], 'Check Point Perimeter Gateway Lease')
+    link_contract(9, f5_assets[:12], 'F5 Premium Plus 24x7 Support & DNS Services')
+    link_contract(21, f5_assets[12:23], 'F5 Advanced WAF & Bot Defense Subscription')
+    link_contract(25, f5_assets[23:33], 'F5 Global Traffic Management License')
+    link_contract(31, f5_assets[33:], 'F5 SSL Orchestration & DDoS Protection')
+    link_contract(10, arista_assets[:20], 'Enterprise Spine-and-Leaf High Speed Fabric Agreement')
+    link_contract(12, arista_assets[20:40], 'Datacenter Low-Latency Core Switching SLA')
+    link_contract(13, arista_assets[40:60], 'Trading Network Fabric Leaf Switch Lease')
+    link_contract(18, arista_assets[60:80], 'Out-of-Band Management & Compute Node Purchase')
+    link_contract(15, (pccw_assets[:28] if len(pccw_assets) >= 28 else saved_assets[:28]), 'PCCW Global Tier-1 BGP IP Transit & Edge Gateway SLA')
+    link_contract(30, (mega_i_assets[:46] if len(mega_i_assets) >= 46 else saved_assets[28:74]), 'MEGA-i Carrier-Neutral Meet-Me-Room Managed SLA')
+
     # Distribute 14 warranties expiring within 90 days
     warranties_expiring_soon_count = 0
 
     for idx, asset in enumerate(saved_assets):
-        # Associate 1 or 2 contracts
-        assigned_contract = created_contracts[idx % len(created_contracts)]
-        asset_contracts.append(AssetContract(asset_id=asset.id, contract_id=assigned_contract.id, coverage_notes="Primary Hardware & SLA Coverage"))
-
         # Warranty
         if warranties_expiring_soon_count < 14 and idx % 80 == 0:
             exp_date = today + timedelta(days=random.randint(12, 85))  # within 90 days!
