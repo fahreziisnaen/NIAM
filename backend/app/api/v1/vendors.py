@@ -6,13 +6,33 @@ from sqlalchemy import or_
 from app.db.session import get_db
 from app.models.vendor import Vendor
 from app.models.asset import Asset
-from app.models.contract import Contract
+from app.models.contract import Contract, AssetContract
 from app.models.user import User, AuditLog
 from app.schemas.vendor import VendorCreate, VendorUpdate, VendorOut
 from app.schemas.common import PaginatedResponse
 from app.api.deps import get_current_user, require_role
 
 router = APIRouter(prefix="/vendors", tags=["Vendor Management"])
+
+def _resolve_vendor_assets(v: Vendor, db: Session) -> List[Asset]:
+    """
+    Resolve all assets associated with a vendor:
+    1. Direct manufacturer/vendor assets (Asset.vendor_id == v.id)
+    2. Assets covered under contracts maintained/provided by this vendor (AssetContract where contract.vendor_id == v.id)
+    """
+    asset_dict = {a.id: a for a in v.assets}
+    contract_ids = [c.id for c in v.contracts]
+    if contract_ids:
+        contract_assets = (
+            db.query(Asset)
+            .join(AssetContract, Asset.id == AssetContract.asset_id)
+            .filter(AssetContract.contract_id.in_(contract_ids))
+            .all()
+        )
+        for ca in contract_assets:
+            if ca.id not in asset_dict:
+                asset_dict[ca.id] = ca
+    return sorted(list(asset_dict.values()), key=lambda x: x.id)
 
 @router.get("", response_model=PaginatedResponse[VendorOut])
 def list_vendors(
@@ -47,7 +67,8 @@ def list_vendors(
 
     items = []
     for v in vendors:
-        asset_count = len(v.assets)
+        all_assets = _resolve_vendor_assets(v, db)
+        asset_count = len(all_assets)
         contract_count = len(v.contracts)
         items.append(VendorOut(
             id=v.id,
@@ -88,6 +109,8 @@ def get_vendor_detail(vendor_id: int, db: Session = Depends(get_db)):
     if not v:
         raise HTTPException(status_code=404, detail="Vendor not found")
 
+    all_assets = _resolve_vendor_assets(v, db)
+
     assets = [
         {
             "id": a.id,
@@ -96,10 +119,10 @@ def get_vendor_detail(vendor_id: int, db: Session = Depends(get_db)):
             "model": a.model.model_name if a.model else "",
             "category": a.category.name if a.category else "",
             "status": a.operational_status,
-            "ip_address": a.primary_ip or "-",
+            "ip_address": a.management_ip or "-",
             "serial_number": a.serial_number or "-"
         }
-        for a in v.assets
+        for a in all_assets
     ]
     contracts = [
         {
@@ -116,11 +139,34 @@ def get_vendor_detail(vendor_id: int, db: Session = Depends(get_db)):
         for c in v.contracts
     ]
 
+    vendor_out = VendorOut(
+        id=v.id,
+        vendor_code=v.vendor_code,
+        name=v.name,
+        category=v.category,
+        manufacturer=v.manufacturer,
+        primary_contact=v.primary_contact,
+        email=v.email,
+        phone=v.phone,
+        address=v.address,
+        country=v.country,
+        support_contact=v.support_contact,
+        support_email=v.support_email,
+        support_hotline=v.support_hotline,
+        website=v.website,
+        status=v.status,
+        notes=v.notes,
+        created_at=v.created_at,
+        updated_at=v.updated_at,
+        asset_count=len(all_assets),
+        contract_count=len(v.contracts)
+    )
+
     return {
-        "vendor": VendorOut.from_orm(v),
+        "vendor": vendor_out,
         "assets": assets,
         "contracts": contracts,
-        "total_assets": len(v.assets),
+        "total_assets": len(all_assets),
         "total_contracts": len(v.contracts)
     }
 

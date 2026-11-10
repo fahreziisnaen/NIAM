@@ -144,6 +144,10 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
   const openDetailModal = async (vendorId: number, defaultTab: "overview" | "contracts" | "assets" = "overview") => {
     setSelectedVendorId(vendorId);
     setActiveTab(defaultTab);
+    const cached = vendors.find((v) => v.id === vendorId);
+    if (cached) {
+      setDetailVendor(cached);
+    }
     setDetailModalOpen(true);
     setDetailLoading(true);
 
