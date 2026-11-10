@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "=== Phillip Securities HK Network Asset Management ==="
+echo "=== Network Asset Management System ==="
 
 # Wait for database if PostgreSQL is used
 if echo "$DATABASE_URL" | grep -q "postgres"; then

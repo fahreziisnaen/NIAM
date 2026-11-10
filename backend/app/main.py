@@ -29,7 +29,7 @@ from app.api.v1 import (
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Enterprise RESTful API for Phillip Securities Hong Kong Network Infrastructure Asset Management",
+    description="Enterprise RESTful API for Network Asset Management System (Phillip Securities Hong Kong)",
     version="1.0.0",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url=f"{settings.API_V1_STR}/docs",
@@ -85,7 +85,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 def health_check():
     return {
         "status": "online",
-        "service": "Phillip Securities HK Network Asset Management API",
+        "service": "Network Asset Management System API",
         "version": "1.0.0",
         "environment": "production-ready"
     }

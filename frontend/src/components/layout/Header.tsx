@@ -238,7 +238,7 @@ export function Header({
 
           {/* Product Name */}
           <h1 className="hidden md:block text-sm lg:text-[15px] font-semibold text-slate-700 tracking-tight truncate">
-            Network Infrastructure Asset Management
+            Network Asset Management System
           </h1>
         </div>
 

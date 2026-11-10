@@ -159,12 +159,12 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                 )}
               </div>
               <h1 className="text-lg font-bold tracking-tight text-white drop-shadow-sm">
-                {requires2FA ? "Two-Factor Verification" : "Sign In to Asset Management"}
+                {requires2FA ? "Two-Factor Verification" : "Network Asset Management System"}
               </h1>
               <p className="text-xs text-slate-300 mt-1 max-w-xs mx-auto">
                 {requires2FA
                   ? "Enter 6-digit TOTP code from Google Authenticator"
-                  : "Phillip Securities Hong Kong Network Infrastructure"}
+                  : "Phillip Securities Hong Kong • Enterprise Portal"}
               </p>
             </div>
           </div>

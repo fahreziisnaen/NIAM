@@ -228,7 +228,7 @@ export default function Home() {
       <div className="min-h-screen bg-[#0A192F] flex flex-col items-center justify-center text-white space-y-3">
         <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
         <p className="text-xs text-slate-300 font-semibold tracking-wide">
-          Connecting to Phillip Securities HK Asset Management Portal...
+          Connecting to Network Asset Management System...
         </p>
       </div>
     );

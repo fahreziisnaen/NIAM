@@ -1,4 +1,4 @@
-# Phillip Securities Hong Kong – Network Infrastructure Asset Management System
+# Phillip Securities Hong Kong – Network Asset Management System
 
 An enterprise-grade, full-stack network infrastructure asset management platform custom-built for **Phillip Securities (Hong Kong) Limited**.
 

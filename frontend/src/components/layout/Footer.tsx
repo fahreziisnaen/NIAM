@@ -50,7 +50,7 @@ export function Footer() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Phillip Securities (Hong Kong)</h3>
-                  <p className="text-[11px] text-slate-500">Network Infrastructure Asset Management</p>
+                  <p className="text-[11px] text-slate-500">Network Asset Management System</p>
                 </div>
               </div>
               <button

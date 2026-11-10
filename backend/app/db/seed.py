@@ -852,7 +852,7 @@ def seed_database():
         action="SYSTEM_INIT",
         entity_type="SYSTEM",
         entity_id="PSHK-INIT-001",
-        details="Enterprise Network Infrastructure Asset Management System initialized with 1,248 assets, 32 active contracts, 14 vendors, and 6 sites.",
+        details="Network Asset Management System initialized with 1,248 assets, 32 active contracts, 14 vendors, and 6 sites.",
         ip_address="10.200.10.25"
     )
     db.add(audit_entry)

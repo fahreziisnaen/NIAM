@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Phillip Securities Hong Kong – Network Infrastructure Asset Management"
+    PROJECT_NAME: str = "Network Asset Management System"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "phillip-securities-hk-super-secret-key-2026-production")
     ALGORITHM: str = "HS256"

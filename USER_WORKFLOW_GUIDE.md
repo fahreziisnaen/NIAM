@@ -1,10 +1,10 @@
-# Phillip Securities Hong Kong – Network Infrastructure Asset Management System
+# Phillip Securities Hong Kong – Network Asset Management System
 ## Standard Operating Procedures (SOP) & Comprehensive User Workflow Guide
 
 ---
 
 ### Document Overview
-This document serves as the official, comprehensive operational manual for the **Phillip Securities (Hong Kong) Limited Network Infrastructure Asset Management System**. It provides step-by-step workflows for Network Operations Center (NOC) engineers, datacenter technicians, enterprise asset managers, procurement teams, contract administrators, and IT compliance auditors.
+This document serves as the official, comprehensive operational manual for the **Phillip Securities (Hong Kong) Limited Network Asset Management System**. It provides step-by-step workflows for Network Operations Center (NOC) engineers, datacenter technicians, enterprise asset managers, procurement teams, contract administrators, and IT compliance auditors.
 
 ---
 

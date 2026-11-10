@@ -1,6 +1,6 @@
 /**
  * Enterprise API Configuration & URL Resolver
- * Phillip Securities Hong Kong – Network Asset Management
+ * Network Asset Management System (Phillip Securities Hong Kong)
  *
  * Automatically resolves API endpoints:
  * 1. Relative path `/api/v1/...` (proxied by Next.js server to backend, works seamlessly in Docker & Production)

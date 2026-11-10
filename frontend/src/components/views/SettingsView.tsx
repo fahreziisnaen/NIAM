@@ -117,7 +117,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: "Phillip Securities HK Alert Gateway Test",
-          message: "Hello World! Test alert from Phillip Securities Hong Kong Network Asset Management System.",
+          message: "Hello World! Test alert from Network Asset Management System (Phillip Securities HK).",
           channels: ["api", "email"],
           api_endpoint: gatewayApiEndpoint.trim(),
           api_key: gatewayApiKey.trim(),
@@ -657,7 +657,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                 <label className="text-slate-500 block mb-1 font-semibold">Application Title</label>
                 <input
                   type="text"
-                  defaultValue="Phillip Securities Hong Kong – Network Infrastructure Asset Management"
+                  defaultValue="Network Asset Management System – Phillip Securities Hong Kong"
                   className="w-full px-3 py-1.5 border border-slate-300 rounded-lg bg-slate-50"
                   readOnly
                 />
