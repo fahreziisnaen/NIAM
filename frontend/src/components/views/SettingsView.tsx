@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle } from "lucide-react";
+import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle, Eye } from "lucide-react";
 import { TwoFactorSetupModal } from "@/components/auth/TwoFactorSetupModal";
 import { AlertRulesView } from "@/components/views/AlertRulesView";
 import { apiUrl } from "@/lib/api";
@@ -26,6 +26,8 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
   const [users, setUsers] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<any | null>(null);
+  const [auditDetailOpen, setAuditDetailOpen] = useState(false);
 
   // 2FA Setup Modal State
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
@@ -641,25 +643,105 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {auditLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50">
-                    <td className="py-2 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                  <tr
+                    key={log.id}
+                    onClick={() => {
+                      setSelectedAuditLog(log);
+                      setAuditDetailOpen(true);
+                    }}
+                    className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                  >
+                    <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                       {log.created_at?.slice(0, 19).replace("T", " ")}
                     </td>
-                    <td className="py-2 px-3 font-medium text-slate-800">{log.user_email}</td>
-                    <td className="py-2 px-3">
+                    <td className="py-2.5 px-3 font-medium text-slate-800">{log.user_email}</td>
+                    <td className="py-2.5 px-3">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-2 px-3 text-slate-600">{log.entity_type}</td>
-                    <td className="py-2 px-3 font-mono font-semibold text-blue-600">{log.entity_id}</td>
-                    <td className="py-2 px-3 text-slate-700 max-w-sm truncate">{log.details}</td>
-                    <td className="py-2 px-3 font-mono text-slate-400 text-[11px]">{log.ip_address}</td>
+                    <td className="py-2.5 px-3 text-slate-600">{log.entity_type}</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-blue-600 group-hover:underline">
+                      {log.entity_id}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-700 max-w-sm truncate">{log.details}</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-400 text-[11px] flex items-center justify-between">
+                      <span>{log.ip_address}</span>
+                      <Eye className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* Audit Detail Modal */}
+          {auditDetailOpen && selectedAuditLog && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <History className="w-4 h-4 text-blue-600" />
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Audit Trail Inspection
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setAuditDetailOpen(false)}
+                    className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">User Operator</span>
+                      <span className="font-semibold text-slate-800">{selectedAuditLog.user_email}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Action & Target</span>
+                      <span className="font-semibold text-slate-800">
+                        {selectedAuditLog.action} on {selectedAuditLog.entity_type}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Entity Reference</span>
+                      <span className="font-mono font-bold text-blue-600">{selectedAuditLog.entity_id}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">IP Address Origin</span>
+                      <span className="font-mono text-slate-700">{selectedAuditLog.ip_address}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Timestamp</span>
+                      <span className="font-mono text-slate-600">
+                        {selectedAuditLog.created_at?.slice(0, 19).replace("T", " ")} UTC
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 font-semibold block mb-1">Full Transaction Details</span>
+                    <div className="bg-slate-900 text-slate-100 font-mono text-[11px] p-3.5 rounded-xl overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-48">
+                      {selectedAuditLog.details}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setAuditDetailOpen(false)}
+                    className="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

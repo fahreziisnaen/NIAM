@@ -467,22 +467,44 @@ export default function Home() {
           )}
 
           {/* VENDORS MODULE */}
-          {currentTab === "vendors" && <VendorsView />}
+          {currentTab === "vendors" && (
+            <VendorsView
+              onSelectAsset={(assetId) => setSelectedAssetId(assetId)}
+              onSelectContract={() => setCurrentTab("contracts")}
+            />
+          )}
 
           {/* LOCATIONS MODULE */}
-          {currentTab === "locations" && <LocationsView initialSub={subCategory} />}
+          {currentTab === "locations" && (
+            <LocationsView
+              initialSub={subCategory}
+              onSelectAsset={(assetId) => setSelectedAssetId(assetId)}
+            />
+          )}
 
           {/* TOPOLOGY MODULE */}
-          {currentTab === "topology" && <TopologyView />}
+          {currentTab === "topology" && (
+            <TopologyView
+              onSelectAsset={(assetId) => setSelectedAssetId(assetId)}
+            />
+          )}
 
           {/* IPAM MODULE */}
-          {currentTab === "ipam" && <IPAMView />}
+          {currentTab === "ipam" && (
+            <IPAMView
+              onSelectAsset={(assetId) => setSelectedAssetId(assetId)}
+            />
+          )}
 
           {/* B2B CONNECTIONS MODULE */}
           {currentTab === "b2b" && <B2BConnectionsView />}
 
           {/* MAINTENANCE MODULE */}
-          {currentTab === "maintenance" && <MaintenanceView />}
+          {currentTab === "maintenance" && (
+            <MaintenanceView
+              onSelectAsset={(assetId) => setSelectedAssetId(assetId)}
+            />
+          )}
 
           {/* SPARES MODULE */}
           {currentTab === "spares" && <SparesView />}

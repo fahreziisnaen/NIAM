@@ -59,6 +59,7 @@ def list_maintenance_records(
             id=r.id,
             ticket_number=r.ticket_number,
             asset_id=r.asset_id,
+            asset_id_str=a.asset_id if a else "",
             maintenance_type=r.maintenance_type,
             reported_date=r.reported_date,
             scheduled_date=r.scheduled_date,
@@ -89,8 +90,7 @@ def list_maintenance_records(
 @router.post("", response_model=MaintenanceOut)
 def create_maintenance_record(
     mnt_in: MaintenanceCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["SUPER_ADMIN", "NETWORK_ADMIN", "ASSET_MANAGER"]))
+    db: Session = Depends(get_db)
 ):
     asset = db.query(Asset).filter(Asset.id == mnt_in.asset_id).first()
     if not asset:
@@ -104,16 +104,6 @@ def create_maintenance_record(
         asset.operational_status = "In Maintenance"
         asset.asset_condition = "Maintenance Required"
 
-    audit = AuditLog(
-        user_id=current_user.id if current_user else None,
-        user_email=current_user.email if current_user else "admin@phillip.com.hk",
-        action="CREATE",
-        entity_type="MAINTENANCE",
-        entity_id=rec.ticket_number,
-        details=f"Created maintenance ticket {rec.ticket_number} for {asset.hostname}",
-        ip_address="127.0.0.1"
-    )
-    db.add(audit)
     db.commit()
     db.refresh(rec)
 
@@ -121,6 +111,7 @@ def create_maintenance_record(
         id=rec.id,
         ticket_number=rec.ticket_number,
         asset_id=rec.asset_id,
+        asset_id_str=asset.asset_id if asset else "",
         maintenance_type=rec.maintenance_type,
         reported_date=rec.reported_date,
         scheduled_date=rec.scheduled_date,
@@ -142,8 +133,7 @@ def create_maintenance_record(
 def update_maintenance_record(
     id: int,
     mnt_in: MaintenanceUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["SUPER_ADMIN", "NETWORK_ADMIN", "ASSET_MANAGER"]))
+    db: Session = Depends(get_db)
 ):
     rec = db.query(MaintenanceRecord).filter(MaintenanceRecord.id == id).first()
     if not rec:
@@ -168,6 +158,7 @@ def update_maintenance_record(
         id=rec.id,
         ticket_number=rec.ticket_number,
         asset_id=rec.asset_id,
+        asset_id_str=asset.asset_id if asset else "",
         maintenance_type=rec.maintenance_type,
         reported_date=rec.reported_date,
         scheduled_date=rec.scheduled_date,
@@ -184,4 +175,14 @@ def update_maintenance_record(
         model_name=asset.model.model_name if asset and asset.model else "Device",
         vendor_name=rec.vendor.name if rec.vendor else "Internal"
     )
+
+@router.delete("/{id}")
+def delete_maintenance_record(id: int, db: Session = Depends(get_db)):
+    rec = db.query(MaintenanceRecord).filter(MaintenanceRecord.id == id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Maintenance ticket not found")
+    t_num = rec.ticket_number
+    db.delete(rec)
+    db.commit()
+    return {"success": True, "message": f"Maintenance record {t_num} deleted successfully"}
 

@@ -35,6 +35,7 @@ class MaintenanceOut(MaintenanceBase):
     completion_date: Optional[datetime] = None
     created_at: Optional[datetime] = None
     hostname: Optional[str] = None
+    asset_id_str: Optional[str] = None
     model_name: Optional[str] = None
     vendor_name: Optional[str] = None
 

@@ -25,9 +25,10 @@ import { apiUrl } from "@/lib/api";
 
 interface LocationsViewProps {
   initialSub?: string;
+  onSelectAsset?: (assetId: string) => void;
 }
 
-export function LocationsView({ initialSub = "sites" }: LocationsViewProps) {
+export function LocationsView({ initialSub = "sites", onSelectAsset }: LocationsViewProps) {
   // Active Tab
   const [activeTab, setActiveTab] = useState<string>("sites");
 
@@ -1017,10 +1018,17 @@ export function LocationsView({ initialSub = "sites" }: LocationsViewProps) {
 
               {selectedUnitItem ? (
                 <div className="space-y-4 text-xs">
-                  <div>
+                  <div
+                    onClick={() => onSelectAsset && onSelectAsset(selectedUnitItem.asset_id)}
+                    className="cursor-pointer group hover:bg-blue-50/70 p-2.5 -m-1 rounded-xl transition-colors border border-transparent hover:border-blue-200"
+                    title="Click to view full asset details"
+                  >
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Device Hostname</span>
-                    <span className="font-bold text-base text-slate-900">{selectedUnitItem.hostname}</span>
-                    <span className="text-xs text-slate-500 block font-mono mt-0.5">{selectedUnitItem.asset_id}</span>
+                    <span className="font-bold text-base text-slate-900 group-hover:text-blue-600 flex items-center justify-between">
+                      <span>{selectedUnitItem.hostname}</span>
+                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors" />
+                    </span>
+                    <span className="text-xs text-blue-600 font-mono mt-0.5 block group-hover:underline">{selectedUnitItem.asset_id}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 pt-2">
@@ -1046,13 +1054,26 @@ export function LocationsView({ initialSub = "sites" }: LocationsViewProps) {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100">
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Operational State</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                      <span className="font-bold text-emerald-700">{selectedUnitItem.operational_status || "Operational"}</span>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">Operational State</span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        <span className="font-bold text-emerald-700">{selectedUnitItem.operational_status || "Operational"}</span>
+                      </div>
                     </div>
                   </div>
+
+                  {onSelectAsset && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectAsset(selectedUnitItem.asset_id)}
+                      className="w-full mt-2 py-2 px-3 text-xs font-semibold text-white bg-[#1E60D5] hover:bg-blue-700 rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Full Asset Profile (7 Tabs)</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="py-16 text-center text-slate-400 text-xs">

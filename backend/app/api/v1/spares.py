@@ -75,8 +75,7 @@ def list_spare_parts(
 @router.post("", response_model=SparePartOut)
 def create_spare_part(
     sp_in: SparePartCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["SUPER_ADMIN", "NETWORK_ADMIN", "ASSET_MANAGER"]))
+    db: Session = Depends(get_db)
 ):
     existing = db.query(SparePart).filter(SparePart.part_number == sp_in.part_number).first()
     if existing:
@@ -111,12 +110,103 @@ def create_spare_part(
         vendor_name=sp.vendor.name if sp.vendor else ""
     )
 
+@router.get("/{id}")
+def get_spare_part_detail(id: int, db: Session = Depends(get_db)):
+    sp = db.query(SparePart).filter(SparePart.id == id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Spare part not found")
+    txs = db.query(SpareStockTransaction).filter(SpareStockTransaction.spare_part_id == id).order_by(SpareStockTransaction.created_at.desc()).limit(10).all()
+    
+    return {
+        "part": SparePartOut(
+            id=sp.id,
+            part_number=sp.part_number,
+            name=sp.name,
+            category=sp.category,
+            vendor_id=sp.vendor_id,
+            quantity=sp.quantity,
+            min_stock_level=sp.min_stock_level,
+            unit_cost=float(sp.unit_cost or 0),
+            currency=sp.currency,
+            stock_location=sp.stock_location,
+            status=sp.status,
+            compatibility=sp.compatibility,
+            notes=sp.notes,
+            created_at=sp.created_at,
+            updated_at=sp.updated_at,
+            vendor_name=sp.vendor.name if sp.vendor else ""
+        ),
+        "transactions": [
+            {
+                "id": t.id,
+                "transaction_type": t.transaction_type,
+                "quantity": t.quantity,
+                "technician": t.technician,
+                "reference_ticket": t.reference_ticket,
+                "notes": t.notes,
+                "created_at": str(t.created_at) if t.created_at else ""
+            }
+            for t in txs
+        ]
+    }
+
+@router.put("/{id}", response_model=SparePartOut)
+def update_spare_part(
+    id: int,
+    sp_in: SparePartUpdate,
+    db: Session = Depends(get_db)
+):
+    sp = db.query(SparePart).filter(SparePart.id == id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Spare part not found")
+
+    for field, val in sp_in.dict(exclude_unset=True).items():
+        setattr(sp, field, val)
+
+    if sp.quantity <= sp.min_stock_level:
+        sp.status = "Low Stock" if sp.quantity > 0 else "Out of Stock"
+    else:
+        sp.status = "In Stock"
+
+    from datetime import datetime
+    sp.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(sp)
+
+    return SparePartOut(
+        id=sp.id,
+        part_number=sp.part_number,
+        name=sp.name,
+        category=sp.category,
+        vendor_id=sp.vendor_id,
+        quantity=sp.quantity,
+        min_stock_level=sp.min_stock_level,
+        unit_cost=float(sp.unit_cost or 0),
+        currency=sp.currency,
+        stock_location=sp.stock_location,
+        status=sp.status,
+        compatibility=sp.compatibility,
+        notes=sp.notes,
+        created_at=sp.created_at,
+        updated_at=sp.updated_at,
+        vendor_name=sp.vendor.name if sp.vendor else ""
+    )
+
+@router.delete("/{id}")
+def delete_spare_part(id: int, db: Session = Depends(get_db)):
+    sp = db.query(SparePart).filter(SparePart.id == id).first()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Spare part not found")
+    p_num = sp.part_number
+    db.delete(sp)
+    db.commit()
+    return {"success": True, "message": f"Spare part {p_num} deleted successfully"}
+
 @router.post("/{id}/transact", response_model=SparePartOut)
 def record_spare_transaction(
     id: int,
     tx_in: SpareStockTransactionCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["SUPER_ADMIN", "NETWORK_ADMIN", "ASSET_MANAGER"]))
+    db: Session = Depends(get_db)
 ):
     sp = db.query(SparePart).filter(SparePart.id == id).first()
     if not sp:

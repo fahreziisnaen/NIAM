@@ -75,7 +75,12 @@ interface VendorContract {
   currency?: string;
 }
 
-export function VendorsView() {
+interface VendorsViewProps {
+  onSelectAsset?: (assetId: string) => void;
+  onSelectContract?: (contractNumber: string) => void;
+}
+
+export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProps = {}) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -847,11 +852,16 @@ export function VendorsView() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {vendorContracts.map((c, idx) => (
-                            <tr key={c.id || idx} className="hover:bg-slate-50 transition-colors">
-                              <td className="py-2.5 px-4 font-mono font-bold text-blue-600">
-                                {c.contract_number}
+                            <tr
+                              key={c.id || idx}
+                              onClick={() => onSelectContract && onSelectContract(c.contract_number)}
+                              className="hover:bg-blue-50/60 transition-colors cursor-pointer group"
+                            >
+                              <td className="py-2.5 px-4 font-mono font-bold text-blue-600 flex items-center gap-1.5">
+                                <span className="group-hover:underline">{c.contract_number}</span>
+                                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </td>
-                              <td className="py-2.5 px-4 font-semibold text-slate-800">
+                              <td className="py-2.5 px-4 font-semibold text-slate-800 group-hover:text-blue-700">
                                 {c.contract_name}
                               </td>
                               <td className="py-2.5 px-4 text-slate-600">
@@ -905,11 +915,16 @@ export function VendorsView() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {vendorAssets.map((a, idx) => (
-                            <tr key={a.id || idx} className="hover:bg-slate-50 transition-colors">
-                              <td className="py-2.5 px-4 font-mono font-bold text-blue-600">
-                                {a.asset_id}
+                            <tr
+                              key={a.id || idx}
+                              onClick={() => onSelectAsset && onSelectAsset(a.asset_id)}
+                              className="hover:bg-blue-50/60 transition-colors cursor-pointer group"
+                            >
+                              <td className="py-2.5 px-4 font-mono font-bold text-blue-600 flex items-center gap-1.5">
+                                <span className="group-hover:underline">{a.asset_id}</span>
+                                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </td>
-                              <td className="py-2.5 px-4 font-semibold text-slate-800">
+                              <td className="py-2.5 px-4 font-semibold text-slate-800 group-hover:text-blue-700">
                                 {a.hostname}
                               </td>
                               <td className="py-2.5 px-4 text-slate-600">

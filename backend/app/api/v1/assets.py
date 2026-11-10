@@ -169,6 +169,9 @@ def get_asset_detail(asset_id_or_number: str, db: Session = Depends(get_db)):
         asset = db.query(Asset).filter(Asset.asset_id == asset_id_or_number, Asset.is_deleted == False).first()
 
     if not asset:
+        asset = db.query(Asset).filter(Asset.hostname == asset_id_or_number, Asset.is_deleted == False).first()
+
+    if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
     m_name = asset.model.model_name if asset.model else "Unknown Model"
@@ -489,6 +492,9 @@ def update_asset(
         asset = db.query(Asset).filter(Asset.id == int(asset_id_or_number), Asset.is_deleted == False).first()
     else:
         asset = db.query(Asset).filter(Asset.asset_id == asset_id_or_number, Asset.is_deleted == False).first()
+
+    if not asset:
+        asset = db.query(Asset).filter(Asset.hostname == asset_id_or_number, Asset.is_deleted == False).first()
 
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")

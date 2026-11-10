@@ -559,11 +559,15 @@ export function ContractsView({
                 </tr>
               ) : (
                 contracts.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-blue-600">
+                  <tr
+                    key={c.id}
+                    onClick={() => handleOpenCoveredAssets(c)}
+                    className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                  >
+                    <td className="py-3 px-3 font-mono font-bold text-blue-600 group-hover:underline">
                       {c.contract_number}
                     </td>
-                    <td className="py-3 px-3 font-semibold text-slate-900 max-w-xs truncate">
+                    <td className="py-3 px-3 font-semibold text-slate-900 max-w-xs truncate group-hover:text-blue-700">
                       {c.contract_name}
                     </td>
                     <td className="py-3 px-3 text-slate-700 font-medium">
@@ -579,7 +583,10 @@ export function ContractsView({
                     <td className="py-3 px-3 text-center">
                       <button
                         type="button"
-                        onClick={() => handleOpenCoveredAssets(c)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenCoveredAssets(c);
+                        }}
                         className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs border border-blue-200/70 transition-all cursor-pointer shadow-2xs"
                         title="Click to view covered devices for this contract"
                       >
@@ -619,7 +626,7 @@ export function ContractsView({
                     </td>
 
                     {/* Action Column with View, Edit, Delete */}
-                    <td className="py-3 px-3 text-right space-x-1 whitespace-nowrap">
+                    <td className="py-3 px-3 text-right space-x-1 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         onClick={() => handleOpenCoveredAssets(c)}

@@ -19,16 +19,26 @@ import {
   Layers,
   ArrowUpRight,
   Shield,
-  Activity
+  Activity,
+  Eye,
+  ExternalLink
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 
-export function IPAMView() {
+interface IPAMViewProps {
+  onSelectAsset?: (assetId: string) => void;
+}
+
+export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
   const [vlans, setVlans] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [assignableAssets, setAssignableAssets] = useState<any[]>([]);
   const [selectedSubnet, setSelectedSubnet] = useState<string>("10.200.100.0/24");
   const [selectedVlanId, setSelectedVlanId] = useState<number | null>(null);
+
+  // IP Detail Modal State
+  const [ipDetailModalOpen, setIpDetailModalOpen] = useState(false);
+  const [selectedIpDetail, setSelectedIpDetail] = useState<any>(null);
 
   const [search, setSearch] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -676,7 +686,17 @@ export function IPAMView() {
               <tr key={ip.id} className="hover:bg-slate-50/60 transition-colors">
                 {/* IP Address */}
                 <td className="px-5 py-3.5">
-                  <span className="font-mono font-bold text-slate-900 text-xs">{ip.ip_address}</span>
+                  <div
+                    onClick={() => {
+                      setSelectedIpDetail(ip);
+                      setIpDetailModalOpen(true);
+                    }}
+                    className="font-mono font-bold text-slate-900 text-xs hover:text-blue-600 hover:underline cursor-pointer flex items-center gap-1.5"
+                    title="Click to view IP allocation details"
+                  >
+                    <span>{ip.ip_address}</span>
+                    <Eye className="w-3 h-3 text-slate-400" />
+                  </div>
                   <span className="text-[10px] text-slate-400 block">{ip.ip_version || "IPv4"}</span>
                 </td>
 
@@ -701,10 +721,17 @@ export function IPAMView() {
                 {/* Assigned Hostname */}
                 <td className="px-5 py-3.5">
                   {ip.hostname ? (
-                    <div>
-                      <span className="font-bold text-slate-900 block">{ip.hostname}</span>
+                    <div
+                      onClick={() => onSelectAsset && onSelectAsset(ip.hostname || ip.asset_id)}
+                      className={onSelectAsset ? "cursor-pointer group" : ""}
+                      title={onSelectAsset ? "Click to view asset profile" : undefined}
+                    >
+                      <span className="font-bold text-slate-900 block group-hover:text-blue-600 group-hover:underline flex items-center gap-1">
+                        <span>{ip.hostname}</span>
+                        {onSelectAsset && <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 text-blue-600 transition-opacity" />}
+                      </span>
                       {ip.asset_id && (
-                        <span className="text-[10px] font-mono text-slate-400">ID #{ip.asset_id}</span>
+                        <span className="text-[10px] font-mono text-slate-400 group-hover:text-blue-600">ID #{ip.asset_id}</span>
                       )}
                     </div>
                   ) : (
@@ -746,8 +773,19 @@ export function IPAMView() {
                   ) : null}
 
                   <button
+                    onClick={() => {
+                      setSelectedIpDetail(ip);
+                      setIpDetailModalOpen(true);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors inline-block cursor-pointer"
+                    title="View IP Details"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
                     onClick={() => openEditIp(ip)}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors inline-block"
+                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors inline-block cursor-pointer"
                     title="Edit IP"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -1153,6 +1191,121 @@ export function IPAMView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================== */}
+      {/* MODAL 6: IP ADDRESS ALLOCATION DETAIL                                    */}
+      {/* ======================================================================== */}
+      {ipDetailModalOpen && selectedIpDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-fadeIn">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex items-center space-x-2">
+                <Globe className="w-5 h-5 text-blue-600" />
+                <h3 className="text-sm font-bold text-slate-900">
+                  IP Allocation Profile: {selectedIpDetail.ip_address}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIpDetailModalOpen(false)}
+                className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">IP Address</span>
+                  <span className="font-mono font-bold text-base text-blue-600">{selectedIpDetail.ip_address}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Allocation Status</span>
+                  <span
+                    className={`inline-block px-2 py-0.5 mt-0.5 rounded-full text-[10px] font-bold border ${
+                      selectedIpDetail.status === "Assigned"
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : selectedIpDetail.status === "Available"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {selectedIpDetail.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Subnet CIDR</span>
+                  <span className="font-mono text-slate-700 font-semibold">{selectedIpDetail.subnet}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">IP Protocol</span>
+                  <span className="font-semibold text-slate-700">{selectedIpDetail.ip_version || "IPv4 Static"}</span>
+                </div>
+              </div>
+
+              {/* Hostname & Associated Hardware */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-2">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block border-b border-slate-100 pb-1">
+                  Connected Device & Interface
+                </span>
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Assigned Hostname:</span>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {selectedIpDetail.hostname || "Unassigned"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Asset ID:</span>
+                    <span className="font-mono font-semibold text-slate-700">
+                      {selectedIpDetail.asset_id ? `#${selectedIpDetail.asset_id}` : "None"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Switch / NIC Interface:</span>
+                    <span className="font-mono text-slate-700">{selectedIpDetail.interface_name || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">MAC Address:</span>
+                    <span className="font-mono text-slate-700">{selectedIpDetail.mac_address || "—"}</span>
+                  </div>
+                </div>
+
+                {selectedIpDetail.hostname && onSelectAsset && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIpDetailModalOpen(false);
+                      onSelectAsset(selectedIpDetail.hostname || selectedIpDetail.asset_id);
+                    }}
+                    className="w-full mt-3 py-2 px-3 text-xs font-semibold text-white bg-[#1E60D5] hover:bg-blue-700 rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Server className="w-3.5 h-3.5" />
+                    <span>View Connected Asset Details ({selectedIpDetail.hostname})</span>
+                  </button>
+                )}
+              </div>
+
+              {selectedIpDetail.description && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 uppercase text-[10px] font-bold block mb-1">Operational Description</span>
+                  <p className="text-slate-700">{selectedIpDetail.description}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setIpDetailModalOpen(false)}
+                className="px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
