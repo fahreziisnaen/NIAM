@@ -62,7 +62,9 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
   const [gatewayApiKey, setGatewayApiKey] = useState("API_KEY_ANDA");
   const [gatewayTargetId, setGatewayTargetId] = useState("628123456789");
   const [gatewayFromSender, setGatewayFromSender] = useState("respon");
+  const [gatewayApiEnabled, setGatewayApiEnabled] = useState(true);
   const [gatewayEmailRecipients, setGatewayEmailRecipients] = useState("noc@phillip.com.hk, infrastructure-team@phillip.com.hk");
+  const [gatewayEmailEnabled, setGatewayEmailEnabled] = useState(true);
   const [gatewaySaving, setGatewaySaving] = useState(false);
   const [gatewaySaveMsg, setGatewaySaveMsg] = useState<string | null>(null);
 
@@ -77,7 +79,9 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
         if (data.api_key) setGatewayApiKey(data.api_key);
         if (data.target_id) setGatewayTargetId(data.target_id);
         if (data.from_sender) setGatewayFromSender(data.from_sender);
+        if (typeof data.api_enabled === "boolean") setGatewayApiEnabled(data.api_enabled);
         if (data.email_recipients) setGatewayEmailRecipients(data.email_recipients);
+        if (typeof data.email_enabled === "boolean") setGatewayEmailEnabled(data.email_enabled);
       })
       .catch(() => {});
   };
@@ -95,11 +99,13 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
           api_key: gatewayApiKey.trim(),
           target_id: gatewayTargetId.trim(),
           from_sender: gatewayFromSender.trim(),
+          api_enabled: gatewayApiEnabled,
           email_recipients: gatewayEmailRecipients.trim(),
+          email_enabled: gatewayEmailEnabled,
         }),
       });
       if (res.ok) {
-        setGatewaySaveMsg("Alert Gateway configuration saved successfully!");
+        setGatewaySaveMsg("Alert Gateway configuration and active channels saved successfully!");
       }
     } catch {
       setGatewaySaveMsg("Failed to save gateway configuration");
@@ -109,6 +115,18 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
   };
 
   const handleSendTestAlert = async () => {
+    const activeChannels: string[] = [];
+    if (gatewayApiEnabled) activeChannels.push("api");
+    if (gatewayEmailEnabled) activeChannels.push("email");
+
+    if (activeChannels.length === 0) {
+      setTestResult({
+        success: false,
+        message: "Perhatian: Kedua channel (API & Email) sedang nonaktif. Aktifkan minimal salah satu tombol channel di atas untuk mengirim alert.",
+      });
+      return;
+    }
+
     setTestSending(true);
     setTestResult(null);
     try {
@@ -118,7 +136,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
         body: JSON.stringify({
           title: "Phillip Securities HK Alert Gateway Test",
           message: "Hello World! Test alert from Network Asset Management System (Phillip Securities HK).",
-          channels: ["api", "email"],
+          channels: activeChannels,
           api_endpoint: gatewayApiEndpoint.trim(),
           api_key: gatewayApiKey.trim(),
           target_id: gatewayTargetId.trim(),
@@ -728,6 +746,85 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
               Configure outbound alert gateway integrations to automatically forward NOC emergency alerts, expiring contracts, and device telemetry to external WhatsApp / Webhook endpoints and infrastructure team email distribution lists.
             </p>
 
+            {/* Quick Channel Mode Bar */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">Pilihan Cepat Status Pengiriman:</span>
+                <span className="text-[11px] text-slate-500">
+                  Pilih channel mana saja yang aktif:{" "}
+                  <strong className={gatewayApiEnabled ? "text-blue-600 font-semibold" : "text-slate-400"}>
+                    API POST ({gatewayApiEnabled ? "Aktif" : "Nonaktif"})
+                  </strong>
+                  {" • "}
+                  <strong className={gatewayEmailEnabled ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                    Email ({gatewayEmailEnabled ? "Aktif" : "Nonaktif"})
+                  </strong>
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGatewayApiEnabled(true);
+                    setGatewayEmailEnabled(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    gatewayApiEnabled && !gatewayEmailEnabled
+                      ? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400/40"
+                      : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
+                  }`}
+                  title="Hanya kirim alert via API POST / WhatsApp"
+                >
+                  API POST Saja
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGatewayApiEnabled(false);
+                    setGatewayEmailEnabled(true);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    !gatewayApiEnabled && gatewayEmailEnabled
+                      ? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400/40"
+                      : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
+                  }`}
+                  title="Hanya kirim alert via Email Relay"
+                >
+                  Email Saja
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGatewayApiEnabled(true);
+                    setGatewayEmailEnabled(true);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    gatewayApiEnabled && gatewayEmailEnabled
+                      ? "bg-slate-900 text-white shadow-xs ring-2 ring-slate-400/40"
+                      : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
+                  }`}
+                  title="Aktifkan kedua channel (API & Email)"
+                >
+                  Keduanya Aktif
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGatewayApiEnabled(false);
+                    setGatewayEmailEnabled(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    !gatewayApiEnabled && !gatewayEmailEnabled
+                      ? "bg-red-600 text-white shadow-xs ring-2 ring-red-400/40"
+                      : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
+                  }`}
+                  title="Nonaktifkan semua pengiriman alert (Mute)"
+                >
+                  Nonaktifkan Semua
+                </button>
+              </div>
+            </div>
+
             {gatewaySaveMsg && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center space-x-2">
                 <Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -737,11 +834,54 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
 
             <form onSubmit={handleSaveAlertSettings} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <h4 className="font-bold text-slate-800 flex items-center text-xs">
-                    <Smartphone className="w-4 h-4 mr-1.5 text-blue-600" />
-                    API Webhook / WhatsApp Gateway Parameters
-                  </h4>
+                {/* 1. API Webhook Box */}
+                <div
+                  className={`space-y-3 p-4 rounded-xl border transition-all ${
+                    gatewayApiEnabled
+                      ? "bg-slate-50 border-blue-200 shadow-2xs"
+                      : "bg-slate-100/70 border-slate-200 opacity-75"
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <h4 className="font-bold text-slate-800 flex items-center text-xs">
+                      <Smartphone
+                        className={`w-4 h-4 mr-1.5 ${
+                          gatewayApiEnabled ? "text-blue-600" : "text-slate-400"
+                        }`}
+                      />
+                      <span>API Webhook / WhatsApp Gateway</span>
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setGatewayApiEnabled(!gatewayApiEnabled)}
+                      className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                        gatewayApiEnabled
+                          ? "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-slate-200 hover:bg-slate-300 text-slate-600 border-slate-300"
+                      }`}
+                      title={
+                        gatewayApiEnabled
+                          ? "Klik untuk menonaktifkan pengiriman API POST"
+                          : "Klik untuk mengaktifkan pengiriman API POST"
+                      }
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          gatewayApiEnabled ? "bg-white animate-pulse" : "bg-slate-400"
+                        }`}
+                      />
+                      <span>{gatewayApiEnabled ? "AKTIF" : "NONAKTIF"}</span>
+                    </button>
+                  </div>
+
+                  {!gatewayApiEnabled && (
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 font-medium flex items-center space-x-1.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        Channel API Webhook sedang <strong>NONAKTIF</strong>. Alert tidak akan dikirim via API POST.
+                      </span>
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-slate-600 block mb-1 font-semibold">
@@ -813,11 +953,54 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                   </div>
                 </div>
 
-                <div className="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <h4 className="font-bold text-slate-800 flex items-center text-xs">
-                    <Mail className="w-4 h-4 mr-1.5 text-emerald-600" />
-                    NOC Email Distribution Parameters
-                  </h4>
+                {/* 2. NOC Email Box */}
+                <div
+                  className={`space-y-3 p-4 rounded-xl border transition-all ${
+                    gatewayEmailEnabled
+                      ? "bg-slate-50 border-emerald-200 shadow-2xs"
+                      : "bg-slate-100/70 border-slate-200 opacity-75"
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <h4 className="font-bold text-slate-800 flex items-center text-xs">
+                      <Mail
+                        className={`w-4 h-4 mr-1.5 ${
+                          gatewayEmailEnabled ? "text-emerald-600" : "text-slate-400"
+                        }`}
+                      />
+                      <span>NOC Email Distribution Parameters</span>
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setGatewayEmailEnabled(!gatewayEmailEnabled)}
+                      className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                        gatewayEmailEnabled
+                          ? "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-slate-200 hover:bg-slate-300 text-slate-600 border-slate-300"
+                      }`}
+                      title={
+                        gatewayEmailEnabled
+                          ? "Klik untuk menonaktifkan pengiriman Email"
+                          : "Klik untuk mengaktifkan pengiriman Email"
+                      }
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          gatewayEmailEnabled ? "bg-white animate-pulse" : "bg-slate-400"
+                        }`}
+                      />
+                      <span>{gatewayEmailEnabled ? "AKTIF" : "NONAKTIF"}</span>
+                    </button>
+                  </div>
+
+                  {!gatewayEmailEnabled && (
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 font-medium flex items-center space-x-1.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        Channel Email Relay sedang <strong>NONAKTIF</strong>. Alert tidak akan dikirim via Email.
+                      </span>
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-slate-600 block mb-1 font-semibold">

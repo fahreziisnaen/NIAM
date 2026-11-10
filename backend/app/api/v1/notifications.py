@@ -183,7 +183,28 @@ def update_alert_settings(req: AlertSettingUpdate, db: Session = Depends(get_db)
         setattr(setting, field, val)
     db.commit()
     db.refresh(setting)
-    return {"success": True, "message": "Alert configuration updated successfully"}
+    return {
+        "success": True,
+        "message": "Alert configuration updated successfully",
+        "api_enabled": setting.api_enabled,
+        "email_enabled": setting.email_enabled
+    }
+
+@router.post("/config/toggle-api")
+def toggle_api_channel(db: Session = Depends(get_db)):
+    setting = get_or_create_settings(db)
+    setting.api_enabled = not setting.api_enabled
+    db.commit()
+    db.refresh(setting)
+    return {"success": True, "api_enabled": setting.api_enabled}
+
+@router.post("/config/toggle-email")
+def toggle_email_channel(db: Session = Depends(get_db)):
+    setting = get_or_create_settings(db)
+    setting.email_enabled = not setting.email_enabled
+    db.commit()
+    db.refresh(setting)
+    return {"success": True, "email_enabled": setting.email_enabled}
 
 @router.get("/dispatch-logs")
 def get_dispatch_logs(limit: int = 20, db: Session = Depends(get_db)):
@@ -217,69 +238,83 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
 
     # 1. API Channel Dispatch
     if "api" in req.channels:
-        endpoint = req.api_endpoint or settings.api_endpoint or "https://api.gateway.com/send"
-        api_key = req.api_key or settings.api_key or "API_KEY_ANDA"
-        target_id = req.target_id or settings.target_id or "628123456789"
-        from_sender = req.from_sender or settings.from_sender or "respon"
+        if not settings.api_enabled:
+            results.append({
+                "channel": "API",
+                "status": "DISABLED",
+                "detail": "API Webhook / WhatsApp gateway channel is currently DEACTIVATED in system settings. Dispatch skipped."
+            })
+        else:
+            endpoint = req.api_endpoint or settings.api_endpoint or "https://api.gateway.com/send"
+            api_key = req.api_key or settings.api_key or "API_KEY_ANDA"
+            target_id = req.target_id or settings.target_id or "628123456789"
+            from_sender = req.from_sender or settings.from_sender or "respon"
 
-        # Exact JSON payload requested by user:
-        api_body = {
-            "id": target_id,
-            "message": req.message,
-            "from": from_sender,
-        }
+            # Exact JSON payload requested by user:
+            api_body = {
+                "id": target_id,
+                "message": req.message,
+                "from": from_sender,
+            }
 
-        api_headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "PhillipSecurities-AssetManagement/1.0",
-        }
+            api_headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "User-Agent": "PhillipSecurities-AssetManagement/1.0",
+            }
 
-        api_status = "SUCCESS"
-        api_response_text = ""
+            api_status = "SUCCESS"
+            api_response_text = ""
 
-        try:
-            # Make the real outbound HTTP request
-            with httpx.Client(timeout=8.0) as client:
-                resp = client.post(endpoint, json=api_body, headers=api_headers)
-                api_response_text = resp.text[:500]
-                if resp.status_code >= 400:
-                    api_status = "WARNING"
-                    api_response_text = f"HTTP {resp.status_code}: {resp.text[:300]}"
-                else:
-                    api_status = "SUCCESS"
-        except Exception as e:
-            # If endpoint is a simulated/placeholder URL or network is unreachable in sandbox, record detailed simulated dispatch
-            api_status = "SIMULATED_SUCCESS"
-            api_response_text = f"Mocked/Simulated Delivery: Dispatched to {endpoint} via Bearer token. Error detail: {str(e)}"
+            try:
+                # Make the real outbound HTTP request
+                with httpx.Client(timeout=8.0) as client:
+                    resp = client.post(endpoint, json=api_body, headers=api_headers)
+                    api_response_text = resp.text[:500]
+                    if resp.status_code >= 400:
+                        api_status = "WARNING"
+                        api_response_text = f"HTTP {resp.status_code}: {resp.text[:300]}"
+                    else:
+                        api_status = "SUCCESS"
+            except Exception as e:
+                # If endpoint is a simulated/placeholder URL or network is unreachable in sandbox, record detailed simulated dispatch
+                api_status = "SIMULATED_SUCCESS"
+                api_response_text = f"Mocked/Simulated Delivery: Dispatched to {endpoint} via Bearer token. Error detail: {str(e)}"
 
-        # Save to Audit / Dispatch Log
-        log_entry = AlertDispatchLog(
-            notification_id=req.notification_id,
-            channel="API",
-            recipient=target_id,
-            payload_sent=str(api_body),
-            response_body=api_response_text,
-            status=api_status,
-        )
-        db.add(log_entry)
-        db.commit()
+            # Save to Audit / Dispatch Log
+            log_entry = AlertDispatchLog(
+                notification_id=req.notification_id,
+                channel="API",
+                recipient=target_id,
+                payload_sent=str(api_body),
+                response_body=api_response_text,
+                status=api_status,
+            )
+            db.add(log_entry)
+            db.commit()
 
-        results.append({
-            "channel": "API",
-            "status": api_status,
-            "endpoint": endpoint,
-            "recipient_id": target_id,
-            "from": from_sender,
-            "header": f"Authorization: Bearer {api_key[:6]}***",
-            "payload": api_body,
-            "response": api_response_text,
-        })
+            results.append({
+                "channel": "API",
+                "status": api_status,
+                "endpoint": endpoint,
+                "recipient_id": target_id,
+                "from": from_sender,
+                "header": f"Authorization: Bearer {api_key[:6]}***",
+                "payload": api_body,
+                "response": api_response_text,
+            })
 
     # 2. Email Channel Dispatch
     if "email" in req.channels:
-        email_recipients = req.email_to or settings.email_recipients or "noc@phillip.com.hk"
-        email_subject = req.subject or f"[Phillip Securities NOC Alert] {req.title or 'Asset Infrastructure Alert'}"
+        if not settings.email_enabled:
+            results.append({
+                "channel": "EMAIL",
+                "status": "DISABLED",
+                "detail": "NOC Email Relay channel is currently DEACTIVATED in system settings. Dispatch skipped."
+            })
+        else:
+            email_recipients = req.email_to or settings.email_recipients or "noc@phillip.com.hk"
+            email_subject = req.subject or f"[Phillip Securities NOC Alert] {req.title or 'Asset Infrastructure Alert'}"
 
         email_status = "SUCCESS"
         email_detail = ""

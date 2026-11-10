@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Sparkles,
   Info,
+  Smartphone,
 } from "lucide-react";
 
 export interface AlertRule {
@@ -1129,34 +1130,117 @@ export function AlertRulesView() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700">Active Delivery Channels</label>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formChannels.includes("api")}
-                        onChange={(e) => {
-                          if (e.target.checked) setFormChannels([...formChannels, "api"]);
-                          else setFormChannels(formChannels.filter((c) => c !== "api"));
-                        }}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-xs font-medium text-slate-700">Webhook API Gateway (Bearer)</span>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Active Delivery Channels (Pilihan Pengiriman Alert)
                     </label>
+                    <div className="flex items-center space-x-1.5 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setFormChannels(["api"])}
+                        className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                          formChannels.length === 1 && formChannels.includes("api")
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        API Saja
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormChannels(["email"])}
+                        className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                          formChannels.length === 1 && formChannels.includes("email")
+                            ? "bg-emerald-600 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Email Saja
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormChannels(["api", "email"])}
+                        className={`px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                          formChannels.includes("api") && formChannels.includes("email")
+                            ? "bg-slate-800 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Keduanya
+                      </button>
+                    </div>
+                  </div>
 
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formChannels.includes("email")}
-                        onChange={(e) => {
-                          if (e.target.checked) setFormChannels([...formChannels, "email"]);
-                          else setFormChannels(formChannels.filter((c) => c !== "email"));
-                        }}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-xs font-medium text-slate-700">NOC Email Relay</span>
-                    </label>
+                  {/* 2 Toggleable Channel Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* API Gateway Card */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (formChannels.includes("api")) {
+                          setFormChannels(formChannels.filter((c) => c !== "api"));
+                        } else {
+                          setFormChannels([...formChannels, "api"]);
+                        }
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        formChannels.includes("api")
+                          ? "bg-blue-50/70 border-blue-400 ring-1 ring-blue-400"
+                          : "bg-slate-50 border-slate-200 hover:bg-slate-100 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Smartphone className={`w-4 h-4 ${formChannels.includes("api") ? "text-blue-600" : "text-slate-400"}`} />
+                        <div>
+                          <div className="text-xs font-bold text-slate-800">API POST / WhatsApp</div>
+                          <div className="text-[10px] text-slate-500">Bearer token & JSON payload</div>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          formChannels.includes("api")
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-200 text-slate-500"
+                        }`}
+                      >
+                        {formChannels.includes("api") ? "AKTIF" : "NONAKTIF"}
+                      </span>
+                    </button>
+
+                    {/* Email Card */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (formChannels.includes("email")) {
+                          setFormChannels(formChannels.filter((c) => c !== "email"));
+                        } else {
+                          setFormChannels([...formChannels, "email"]);
+                        }
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        formChannels.includes("email")
+                          ? "bg-emerald-50/70 border-emerald-400 ring-1 ring-emerald-400"
+                          : "bg-slate-50 border-slate-200 hover:bg-slate-100 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Mail className={`w-4 h-4 ${formChannels.includes("email") ? "text-emerald-600" : "text-slate-400"}`} />
+                        <div>
+                          <div className="text-xs font-bold text-slate-800">NOC Email Relay</div>
+                          <div className="text-[10px] text-slate-500">Corporate SMTP notification</div>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          formChannels.includes("email")
+                            ? "bg-emerald-600 text-white"
+                            : "bg-slate-200 text-slate-500"
+                        }`}
+                      >
+                        {formChannels.includes("email") ? "AKTIF" : "NONAKTIF"}
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
