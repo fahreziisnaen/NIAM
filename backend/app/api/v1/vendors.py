@@ -88,8 +88,33 @@ def get_vendor_detail(vendor_id: int, db: Session = Depends(get_db)):
     if not v:
         raise HTTPException(status_code=404, detail="Vendor not found")
 
-    assets = [{"asset_id": a.asset_id, "hostname": a.hostname, "model": a.model.model_name if a.model else "", "status": a.operational_status} for a in v.assets[:20]]
-    contracts = [{"contract_number": c.contract_number, "contract_name": c.contract_name, "end_date": str(c.end_date), "status": c.status} for c in v.contracts]
+    assets = [
+        {
+            "id": a.id,
+            "asset_id": a.asset_id,
+            "hostname": a.hostname,
+            "model": a.model.model_name if a.model else "",
+            "category": a.category.name if a.category else "",
+            "status": a.operational_status,
+            "ip_address": a.primary_ip or "-",
+            "serial_number": a.serial_number or "-"
+        }
+        for a in v.assets
+    ]
+    contracts = [
+        {
+            "id": c.id,
+            "contract_number": c.contract_number,
+            "contract_name": c.contract_name,
+            "contract_type": c.contract_type,
+            "start_date": str(c.start_date) if c.start_date else "-",
+            "end_date": str(c.end_date) if c.end_date else "-",
+            "status": c.status,
+            "contract_value": float(c.contract_value or 0),
+            "currency": c.currency or "HKD"
+        }
+        for c in v.contracts
+    ]
 
     return {
         "vendor": VendorOut.from_orm(v),
@@ -102,8 +127,7 @@ def get_vendor_detail(vendor_id: int, db: Session = Depends(get_db)):
 @router.post("", response_model=VendorOut)
 def create_vendor(
     vendor_in: VendorCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["SUPER_ADMIN", "CONTRACT_MANAGER"]))
+    db: Session = Depends(get_db)
 ):
     existing = db.query(Vendor).filter(Vendor.vendor_code == vendor_in.vendor_code).first()
     if existing:
@@ -111,18 +135,6 @@ def create_vendor(
 
     vendor = Vendor(**vendor_in.dict())
     db.add(vendor)
-    db.flush()
-
-    audit = AuditLog(
-        user_id=current_user.id if current_user else None,
-        user_email=current_user.email if current_user else "admin@phillip.com.hk",
-        action="CREATE",
-        entity_type="VENDOR",
-        entity_id=vendor.vendor_code,
-        details=f"Created vendor {vendor.name}",
-        ip_address="127.0.0.1"
-    )
-    db.add(audit)
     db.commit()
     db.refresh(vendor)
 
@@ -148,4 +160,67 @@ def create_vendor(
         asset_count=0,
         contract_count=0
     )
+
+@router.put("/{vendor_id}", response_model=VendorOut)
+def update_vendor(
+    vendor_id: int,
+    vendor_in: VendorUpdate,
+    db: Session = Depends(get_db)
+):
+    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    for field, val in vendor_in.dict(exclude_unset=True).items():
+        setattr(vendor, field, val)
+
+    from datetime import datetime
+    vendor.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(vendor)
+
+    return VendorOut(
+        id=vendor.id,
+        vendor_code=vendor.vendor_code,
+        name=vendor.name,
+        category=vendor.category,
+        manufacturer=vendor.manufacturer,
+        primary_contact=vendor.primary_contact,
+        email=vendor.email,
+        phone=vendor.phone,
+        address=vendor.address,
+        country=vendor.country,
+        support_contact=vendor.support_contact,
+        support_email=vendor.support_email,
+        support_hotline=vendor.support_hotline,
+        website=vendor.website,
+        status=vendor.status,
+        notes=vendor.notes,
+        created_at=vendor.created_at,
+        updated_at=vendor.updated_at,
+        asset_count=len(vendor.assets),
+        contract_count=len(vendor.contracts)
+    )
+
+@router.delete("/{vendor_id}")
+def delete_vendor(vendor_id: int, db: Session = Depends(get_db)):
+    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    if vendor.assets:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete vendor '{vendor.name}' because {len(vendor.assets)} assets are associated with it. Please reassign the assets first."
+        )
+    if vendor.contracts:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete vendor '{vendor.name}' because {len(vendor.contracts)} contracts are associated with it. Please reassign the contracts first."
+        )
+
+    v_name = vendor.name
+    db.delete(vendor)
+    db.commit()
+    return {"success": True, "message": f"Vendor '{v_name}' deleted successfully."}
 
