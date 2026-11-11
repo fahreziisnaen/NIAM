@@ -19,7 +19,13 @@ import {
   X,
   ChevronRight,
   RefreshCw,
-  HardDrive
+  HardDrive,
+  Phone,
+  Mail,
+  ArrowUpRight,
+  Box,
+  Shield,
+  ExternalLink
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
@@ -62,6 +68,28 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: string; id: number; name: string } | null>(null);
+
+  // Interactive Detail Modals State
+  const [detailSiteModalOpen, setDetailSiteModalOpen] = useState(false);
+  const [selectedSiteDetail, setSelectedSiteDetail] = useState<any>(null);
+  const [siteAssets, setSiteAssets] = useState<any[]>([]);
+  const [siteDetailLoading, setSiteDetailLoading] = useState(false);
+  const [siteDetailTab, setSiteDetailTab] = useState<"overview" | "buildings" | "racks" | "assets">("overview");
+  const [siteAssetSearch, setSiteAssetSearch] = useState("");
+
+  const [detailBuildingModalOpen, setDetailBuildingModalOpen] = useState(false);
+  const [selectedBuildingDetail, setSelectedBuildingDetail] = useState<any>(null);
+  const [buildingAssets, setBuildingAssets] = useState<any[]>([]);
+  const [buildingDetailLoading, setBuildingDetailLoading] = useState(false);
+  const [buildingDetailTab, setBuildingDetailTab] = useState<"overview" | "floors" | "racks" | "assets">("overview");
+  const [buildingAssetSearch, setBuildingAssetSearch] = useState("");
+
+  const [detailRackModalOpen, setDetailRackModalOpen] = useState(false);
+  const [selectedRackDetail, setSelectedRackDetail] = useState<any>(null);
+  const [rackAssets, setRackAssets] = useState<any[]>([]);
+  const [rackDetailLoading, setRackDetailLoading] = useState(false);
+  const [rackDetailTab, setRackDetailTab] = useState<"overview" | "assets">("overview");
+  const [rackAssetSearch, setRackAssetSearch] = useState("");
 
   // Form inputs
   const [siteForm, setSiteForm] = useState({
@@ -185,6 +213,93 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
   const notifyError = (msg: string) => {
     setActionError(msg);
     setTimeout(() => setActionError(null), 5000);
+  };
+
+  // ============================================================================
+  // Interactive Detail Modal Openers
+  // ============================================================================
+  const openSiteDetail = async (site: any, tab: "overview" | "buildings" | "racks" | "assets" = "overview") => {
+    setSelectedSiteDetail(site);
+    setSiteDetailTab(tab);
+    setDetailSiteModalOpen(true);
+    setSiteDetailLoading(true);
+    setSiteAssetSearch("");
+    try {
+      const [locRes, astRes] = await Promise.all([
+        fetch(apiUrl(`/api/v1/locations/${site.id}`)),
+        fetch(apiUrl(`/api/v1/locations/${site.id}/assets`))
+      ]);
+      if (locRes.ok) {
+        const locData = await locRes.json();
+        setSelectedSiteDetail(locData);
+      }
+      if (astRes.ok) {
+        const astData = await astRes.json();
+        setSiteAssets(Array.isArray(astData) ? astData : []);
+      } else {
+        setSiteAssets([]);
+      }
+    } catch {
+      setSiteAssets([]);
+    } finally {
+      setSiteDetailLoading(false);
+    }
+  };
+
+  const openBuildingDetail = async (bldg: any, tab: "overview" | "floors" | "racks" | "assets" = "overview") => {
+    setSelectedBuildingDetail(bldg);
+    setBuildingDetailTab(tab);
+    setDetailBuildingModalOpen(true);
+    setBuildingDetailLoading(true);
+    setBuildingAssetSearch("");
+    try {
+      const [bldRes, astRes] = await Promise.all([
+        fetch(apiUrl(`/api/v1/locations/buildings/${bldg.id}`)),
+        fetch(apiUrl(`/api/v1/locations/buildings/${bldg.id}/assets`))
+      ]);
+      if (bldRes.ok) {
+        const bldData = await bldRes.json();
+        setSelectedBuildingDetail(bldData);
+      }
+      if (astRes.ok) {
+        const astData = await astRes.json();
+        setBuildingAssets(Array.isArray(astData) ? astData : []);
+      } else {
+        setBuildingAssets([]);
+      }
+    } catch {
+      setBuildingAssets([]);
+    } finally {
+      setBuildingDetailLoading(false);
+    }
+  };
+
+  const openRackDetail = async (rack: any, tab: "overview" | "assets" = "overview") => {
+    setSelectedRackDetail(rack);
+    setRackDetailTab(tab);
+    setDetailRackModalOpen(true);
+    setRackDetailLoading(true);
+    setRackAssetSearch("");
+    try {
+      const [rckRes, astRes] = await Promise.all([
+        fetch(apiUrl(`/api/v1/locations/racks/${rack.id}`)),
+        fetch(apiUrl(`/api/v1/locations/racks/${rack.id}/assets`))
+      ]);
+      if (rckRes.ok) {
+        const rckData = await rckRes.json();
+        setSelectedRackDetail(rckData);
+      }
+      if (astRes.ok) {
+        const astData = await astRes.json();
+        setRackAssets(Array.isArray(astData) ? astData : []);
+      } else {
+        setRackAssets([]);
+      }
+    } catch {
+      setRackAssets([]);
+    } finally {
+      setRackDetailLoading(false);
+    }
   };
 
   // ============================================================================
@@ -652,6 +767,13 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                   </div>
                   <div className="flex items-center space-x-1">
                     <button
+                      onClick={() => openSiteDetail(loc, "overview")}
+                      className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors"
+                      title="View Site Infrastructure Details"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => openEditSite(loc)}
                       className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors"
                       title="Edit Location"
@@ -668,7 +790,14 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                   </div>
                 </div>
 
-                <h3 className="text-sm font-bold text-slate-900 mt-2">{loc.name}</h3>
+                <h3
+                  onClick={() => openSiteDetail(loc, "overview")}
+                  className="text-sm font-bold text-slate-900 mt-2 cursor-pointer hover:text-blue-600 transition-colors flex items-center justify-between group"
+                  title="Click to view site details"
+                >
+                  <span className="group-hover:underline">{loc.name}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-1" />
+                </h3>
                 <p className="text-xs text-slate-500 mt-0.5 flex items-center">
                   <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" />
                   <span className="truncate">{loc.address || `${loc.city}, ${loc.country}`}</span>
@@ -683,18 +812,33 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-slate-50 p-2 rounded-lg">
-                  <span className="block text-[10px] text-slate-400 font-semibold uppercase">Buildings</span>
-                  <span className="font-bold text-slate-800">{loc.building_count}</span>
-                </div>
-                <div className="bg-slate-50 p-2 rounded-lg">
-                  <span className="block text-[10px] text-slate-400 font-semibold uppercase">Racks</span>
-                  <span className="font-bold text-slate-800">{loc.rack_count}</span>
-                </div>
-                <div className="bg-blue-50/60 p-2 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => openSiteDetail(loc, "buildings")}
+                  className="bg-slate-50 hover:bg-blue-50/80 p-2 rounded-lg cursor-pointer transition-all border border-slate-100 hover:border-blue-200 group text-left sm:text-center"
+                  title="Click to inspect buildings in this site"
+                >
+                  <span className="block text-[10px] text-slate-400 group-hover:text-blue-600 font-semibold uppercase">Buildings</span>
+                  <span className="font-bold text-slate-800 group-hover:text-blue-700">{loc.building_count}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openSiteDetail(loc, "racks")}
+                  className="bg-slate-50 hover:bg-blue-50/80 p-2 rounded-lg cursor-pointer transition-all border border-slate-100 hover:border-blue-200 group text-left sm:text-center"
+                  title="Click to inspect racks in this site"
+                >
+                  <span className="block text-[10px] text-slate-400 group-hover:text-blue-600 font-semibold uppercase">Racks</span>
+                  <span className="font-bold text-slate-800 group-hover:text-blue-700">{loc.rack_count}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openSiteDetail(loc, "assets")}
+                  className="bg-blue-50/60 hover:bg-blue-100/90 p-2 rounded-lg cursor-pointer transition-all border border-blue-100 hover:border-blue-300 group text-left sm:text-center"
+                  title="Click to inspect all active assets in this site"
+                >
                   <span className="block text-[10px] text-blue-600 font-semibold uppercase">Assets</span>
-                  <span className="font-bold text-blue-700">{loc.asset_count}</span>
-                </div>
+                  <span className="font-bold text-blue-700 group-hover:underline">{loc.asset_count}</span>
+                </button>
               </div>
             </div>
           ))}
@@ -718,18 +862,62 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredBuildings.map((b) => (
-                <tr key={b.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-5 py-3.5 font-mono font-bold text-slate-800">{b.code}</td>
-                  <td className="px-5 py-3.5 font-semibold text-slate-900">{b.name}</td>
-                  <td className="px-5 py-3.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">
+                <tr
+                  key={b.id}
+                  onClick={() => openBuildingDetail(b, "overview")}
+                  className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                >
+                  <td className="px-5 py-3.5 font-mono font-bold text-slate-800 group-hover:text-blue-600">
+                    {b.code}
+                  </td>
+                  <td className="px-5 py-3.5 font-semibold text-slate-900 group-hover:text-blue-600">
+                    <div className="flex items-center space-x-1.5">
+                      <span>{b.name}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const s = locations.find((l) => l.id === b.location_id || l.code === b.location_code || l.name === b.location_name);
+                        if (s) openSiteDetail(s, "overview");
+                      }}
+                      className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer border border-blue-200"
+                      title="Click to view parent site"
+                    >
                       {b.location_name} ({b.location_code})
-                    </span>
+                    </button>
                   </td>
                   <td className="px-5 py-3.5 text-slate-500 max-w-xs truncate">{b.address || "—"}</td>
-                  <td className="px-5 py-3.5 text-center font-bold text-slate-700">{b.floor_count}</td>
-                  <td className="px-5 py-3.5 text-center font-bold text-blue-600">{b.rack_count}</td>
-                  <td className="px-5 py-3.5 text-right space-x-2">
+                  <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => openBuildingDetail(b, "floors")}
+                      className="px-2 py-0.5 rounded-full font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Click to view floors in this building"
+                    >
+                      {b.floor_count}
+                    </button>
+                  </td>
+                  <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => openBuildingDetail(b, "racks")}
+                      className="px-2 py-0.5 rounded-full font-bold text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
+                      title="Click to view racks in this building"
+                    >
+                      {b.rack_count}
+                    </button>
+                  </td>
+                  <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => openBuildingDetail(b, "overview")}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors"
+                      title="View Building Details & Devices"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={() => openEditBuilding(b)}
                       className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors"
@@ -767,35 +955,76 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredFloors.map((f) => (
-                <tr key={f.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-5 py-3.5 font-mono font-bold text-blue-600 text-sm">{f.floor_number}</td>
-                  <td className="px-5 py-3.5 font-semibold text-slate-900">{f.floor_name}</td>
-                  <td className="px-5 py-3.5 text-slate-700 font-medium">{f.building_name}</td>
-                  <td className="px-5 py-3.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
-                      {f.location_name}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-center font-bold text-slate-800">{f.rack_count}</td>
-                  <td className="px-5 py-3.5 text-right space-x-2">
-                    <button
-                      onClick={() => openEditFloor(f)}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors"
-                      title="Edit Floor"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => confirmDelete("floor", f.id, f.floor_number)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 transition-colors"
-                      title="Delete Floor"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredFloors.map((f) => {
+                const parentBldg = buildings.find((x) => x.id === f.building_id || x.name === f.building_name);
+                const parentSite = locations.find((l) => l.name === f.location_name || l.code === f.location_code);
+                return (
+                  <tr
+                    key={f.id}
+                    onClick={() => {
+                      if (parentBldg) openBuildingDetail(parentBldg, "floors");
+                    }}
+                    className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-5 py-3.5 font-mono font-bold text-blue-600 text-sm group-hover:underline">
+                      {f.floor_number}
+                    </td>
+                    <td className="px-5 py-3.5 font-semibold text-slate-900">{f.floor_name}</td>
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (parentBldg) openBuildingDetail(parentBldg, "overview");
+                        }}
+                        className="text-slate-700 font-medium hover:text-blue-600 hover:underline cursor-pointer"
+                        title="Click to view building details"
+                      >
+                        {f.building_name}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (parentSite) openSiteDetail(parentSite, "overview");
+                        }}
+                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                        title="Click to view site details"
+                      >
+                        {f.location_name}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (parentBldg) openBuildingDetail(parentBldg, "racks");
+                        }}
+                        className="font-bold text-slate-800 hover:text-blue-600 px-2 py-0.5 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                        title="Click to view racks in this building floor"
+                      >
+                        {f.rack_count}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3.5 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => openEditFloor(f)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors"
+                        title="Edit Floor"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => confirmDelete("floor", f.id, f.floor_number)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 transition-colors"
+                        title="Delete Floor"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -818,62 +1047,112 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredRacks.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-5 py-3.5 font-bold text-slate-900">{r.rack_name}</td>
-                  <td className="px-5 py-3.5 font-mono text-[11px] text-slate-600">{r.rack_number}</td>
-                  <td className="px-5 py-3.5 font-medium text-slate-800">
-                    {r.location_name} ({r.location_code})
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-500">
-                    {r.floor_name} • {r.room}
-                  </td>
-                  <td className="px-5 py-3.5 text-[11px]">
-                    <span className="font-semibold text-slate-700">{r.power_feed}</span>
-                    <span className="text-slate-400 ml-1">({r.max_power_kw})</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-center font-bold text-slate-700">{r.total_u}U</td>
-                  <td className="px-5 py-3.5 text-center">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="font-bold text-blue-600">{r.asset_count} assets</span>
-                      <span className="text-[10px] text-slate-400">({r.utilization_pct}%)</span>
-                    </div>
-                    <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mt-1 overflow-hidden">
-                      <div
-                        className="h-full bg-blue-600 rounded-full"
-                        style={{ width: `${Math.min(r.utilization_pct, 100)}%` }}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap">
-                    <button
-                      onClick={() => {
-                        setSelectedElevationRackId(r.id);
-                        setActiveTab("elevation");
-                      }}
-                      className="px-2 py-1 text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors inline-flex items-center space-x-1"
-                      title="View 42U Elevation"
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span>Elevation</span>
-                    </button>
-                    <button
-                      onClick={() => openEditRack(r)}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors inline-block"
-                      title="Edit Rack"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => confirmDelete("rack", r.id, r.rack_name)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 transition-colors inline-block"
-                      title="Delete Rack"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredRacks.map((r) => {
+                const parentSite = locations.find((l) => l.name === r.location_name || l.code === r.location_code);
+                const parentBldg = buildings.find((b) => b.name === r.building_name);
+                return (
+                  <tr
+                    key={r.id}
+                    onClick={() => openRackDetail(r, "overview")}
+                    className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-5 py-3.5 font-bold text-slate-900 group-hover:text-blue-600">
+                      <div className="flex items-center space-x-1.5">
+                        <span>{r.rack_name}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 font-mono text-[11px] text-slate-600">{r.rack_number}</td>
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (parentSite) openSiteDetail(parentSite, "racks");
+                        }}
+                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors cursor-pointer border border-blue-200"
+                        title="Click to view parent site"
+                      >
+                        {r.location_name} ({r.location_code})
+                      </button>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-500" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (parentBldg) openBuildingDetail(parentBldg, "floors");
+                        }}
+                        className="hover:text-blue-600 hover:underline cursor-pointer"
+                        title="Click to view building floors"
+                      >
+                        {r.floor_name} • {r.room}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3.5 text-[11px]">
+                      <span className="font-semibold text-slate-700">{r.power_feed}</span>
+                      <span className="text-slate-400 ml-1">({r.max_power_kw})</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-center font-bold text-slate-700">{r.total_u}U</td>
+                    <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => openRackDetail(r, "assets")}
+                        className="p-1 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer group/occ"
+                        title="Click to inspect installed assets in this rack"
+                      >
+                        <div className="flex items-center justify-center space-x-2">
+                          <span className="font-bold text-blue-600 group-hover/occ:underline">{r.asset_count} assets</span>
+                          <span className="text-[10px] text-slate-400">({r.utilization_pct}%)</span>
+                        </div>
+                        <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mt-1 overflow-hidden">
+                          <div
+                            className="h-full bg-blue-600 rounded-full"
+                            style={{ width: `${Math.min(r.utilization_pct, 100)}%` }}
+                          />
+                        </div>
+                      </button>
+                    </td>
+                    <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => openRackDetail(r, "overview")}
+                        className="px-2 py-1 text-[11px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                        title="View Rack Details & Assets"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span>Details</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedElevationRackId(r.id);
+                          setActiveTab("elevation");
+                        }}
+                        className="px-2 py-1 text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                        title="View 42U Visual Elevation"
+                      >
+                        <HardDrive className="w-3 h-3" />
+                        <span>Elevation</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEditRack(r)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-slate-100 transition-colors inline-block cursor-pointer"
+                        title="Edit Rack"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => confirmDelete("rack", r.id, r.rack_name)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 transition-colors inline-block cursor-pointer"
+                        title="Delete Rack"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1555,6 +1834,1023 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
               >
                 Yes, Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================== */}
+      {/* MODAL 6: SITE & DATA CENTER INTERACTIVE DETAIL                           */}
+      {/* ======================================================================== */}
+      {detailSiteModalOpen && selectedSiteDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-fadeIn my-6 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                      {selectedSiteDetail.code}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        selectedSiteDetail.type === "Data Center"
+                          ? "bg-purple-100 text-purple-700 border border-purple-200"
+                          : selectedSiteDetail.type === "Headquarters"
+                          ? "bg-amber-100 text-amber-700 border border-amber-200"
+                          : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {selectedSiteDetail.type}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 mt-0.5">{selectedSiteDetail.name}</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailSiteModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Subtabs */}
+            <div className="flex items-center space-x-2 px-6 border-b border-slate-200 bg-white shrink-0 overflow-x-auto">
+              {[
+                { id: "overview", label: "Overview & Facility Info" },
+                {
+                  id: "buildings",
+                  label: `Buildings (${buildings.filter((b) => b.location_id === selectedSiteDetail.id || b.location_code === selectedSiteDetail.code).length})`,
+                },
+                {
+                  id: "racks",
+                  label: `Racks (${selectedSiteDetail.racks?.length || racks.filter((r) => r.location_code === selectedSiteDetail.code || r.location_name === selectedSiteDetail.name).length})`,
+                },
+                { id: "assets", label: `Installed Assets (${siteAssets.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSiteDetailTab(tab.id as any)}
+                  className={`px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    siteDetailTab === tab.id
+                      ? "border-blue-600 text-blue-600 font-bold"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Modal Body Content */}
+            <div className="p-6 overflow-y-auto space-y-5 text-xs flex-1">
+              {/* TAB: OVERVIEW */}
+              {siteDetailTab === "overview" && (
+                <div className="space-y-5">
+                  {/* Metric Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Buildings</span>
+                      <span className="text-xl font-bold text-slate-900 mt-1 block">
+                        {selectedSiteDetail.building_count || 1}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Floors</span>
+                      <span className="text-xl font-bold text-slate-900 mt-1 block">
+                        {selectedSiteDetail.floor_count || 1}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Racks</span>
+                      <span className="text-xl font-bold text-slate-900 mt-1 block">
+                        {selectedSiteDetail.rack_count || selectedSiteDetail.racks?.length || 0}
+                      </span>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-blue-600 font-bold uppercase block">Installed Assets</span>
+                      <span className="text-xl font-bold text-blue-700 mt-1 block">
+                        {siteAssets.length} units
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Physical Address & Contact */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Physical Location</span>
+                      <p className="font-semibold text-slate-800 text-sm">{selectedSiteDetail.name}</p>
+                      <p className="text-slate-600 flex items-start space-x-2">
+                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <span>{selectedSiteDetail.address || "—"}</span>
+                      </p>
+                      <p className="text-slate-500 pt-1">
+                        Region: <span className="font-semibold text-slate-700">{selectedSiteDetail.city || "Hong Kong"}, {selectedSiteDetail.country || "Hong Kong"}</span>
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">On-Site Facility Contact</span>
+                      <p className="font-semibold text-slate-800 text-sm">{selectedSiteDetail.contact_person || "Facility Operations Team"}</p>
+                      {selectedSiteDetail.contact_phone && (
+                        <p className="text-slate-600 flex items-center space-x-2">
+                          <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                          <span className="font-mono">{selectedSiteDetail.contact_phone}</span>
+                        </p>
+                      )}
+                      {selectedSiteDetail.contact_email && (
+                        <p className="text-slate-600 flex items-center space-x-2">
+                          <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                          <span>{selectedSiteDetail.contact_email}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick Action Navigation */}
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSiteDetailTab("buildings")}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold transition-colors flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <BuildingIcon className="w-4 h-4 text-slate-600" />
+                      <span>Explore Buildings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSiteDetailTab("racks")}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold transition-colors flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <Server className="w-4 h-4 text-slate-600" />
+                      <span>Explore Racks</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSiteDetailTab("assets")}
+                      className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-semibold transition-colors flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <HardDrive className="w-4 h-4 text-blue-600" />
+                      <span>Inspect All {siteAssets.length} Assets</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB: BUILDINGS */}
+              {siteDetailTab === "buildings" && (
+                <div className="space-y-4">
+                  {buildings.filter((b) => b.location_id === selectedSiteDetail.id || b.location_code === selectedSiteDetail.code).length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No standalone buildings registered for this site yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {buildings
+                        .filter((b) => b.location_id === selectedSiteDetail.id || b.location_code === selectedSiteDetail.code)
+                        .map((b) => (
+                          <div
+                            key={b.id}
+                            className="bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700">
+                                  {b.code}
+                                </span>
+                                <span className="text-[11px] font-semibold text-blue-600">{b.rack_count} racks</span>
+                              </div>
+                              <h4 className="text-sm font-bold text-slate-900 mt-2">{b.name}</h4>
+                              <p className="text-slate-500 text-xs mt-1 truncate">{b.address || "—"}</p>
+                              <div className="mt-2 text-[11px] text-slate-600">
+                                Total Floors: <span className="font-bold text-slate-800">{b.floor_count}</span>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDetailSiteModalOpen(false);
+                                  openBuildingDetail(b, "overview");
+                                }}
+                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg transition-colors flex items-center space-x-1 cursor-pointer"
+                              >
+                                <span>Inspect Building</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: RACKS */}
+              {siteDetailTab === "racks" && (
+                <div className="space-y-4">
+                  {racks.filter((r) => r.location_code === selectedSiteDetail.code || r.location_name === selectedSiteDetail.name).length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No racks registered under this site yet.
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="px-4 py-3">Rack</th>
+                            <th className="px-4 py-3">Room / Floor</th>
+                            <th className="px-4 py-3">Power Spec</th>
+                            <th className="px-4 py-3 text-center">Capacity</th>
+                            <th className="px-4 py-3 text-center">Occupancy</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {racks
+                            .filter((r) => r.location_code === selectedSiteDetail.code || r.location_name === selectedSiteDetail.name)
+                            .map((r) => (
+                              <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="px-4 py-3">
+                                  <div className="font-bold text-slate-900">{r.rack_name}</div>
+                                  <div className="font-mono text-[10px] text-slate-500">{r.rack_number}</div>
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {r.floor_name} • {r.room}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {r.power_feed} <span className="text-slate-400">({r.max_power_kw})</span>
+                                </td>
+                                <td className="px-4 py-3 text-center font-bold text-slate-700">{r.total_u}U</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="font-bold text-blue-600">{r.asset_count} assets</span>
+                                  <span className="text-slate-400 text-[10px] ml-1">({r.utilization_pct}%)</span>
+                                </td>
+                                <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDetailSiteModalOpen(false);
+                                      openRackDetail(r, "overview");
+                                    }}
+                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded transition-colors cursor-pointer"
+                                  >
+                                    Details
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedElevationRackId(r.id);
+                                      setActiveTab("elevation");
+                                      setDetailSiteModalOpen(false);
+                                    }}
+                                    className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    <span>Elevation</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: INSTALLED ASSETS */}
+              {siteDetailTab === "assets" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search assets by hostname, IP, model, rack..."
+                        value={siteAssetSearch}
+                        onChange={(e) => setSiteAssetSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <span className="text-slate-400 text-xs">
+                      Total: <span className="font-bold text-slate-800">{siteAssets.length}</span> devices
+                    </span>
+                  </div>
+
+                  {siteDetailLoading ? (
+                    <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
+                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+                      <span>Loading site assets...</span>
+                    </div>
+                  ) : siteAssets.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No assets currently associated with this site.
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-[460px] overflow-y-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2.5">Asset ID</th>
+                            <th className="px-4 py-2.5">Hostname</th>
+                            <th className="px-4 py-2.5">Model / Vendor</th>
+                            <th className="px-4 py-2.5">Category</th>
+                            <th className="px-4 py-2.5">Management IP</th>
+                            <th className="px-4 py-2.5">Rack / Position</th>
+                            <th className="px-4 py-2.5">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {siteAssets
+                            .filter((a) => {
+                              if (!siteAssetSearch) return true;
+                              const q = siteAssetSearch.toLowerCase();
+                              return (
+                                (a.hostname && a.hostname.toLowerCase().includes(q)) ||
+                                (a.asset_id && a.asset_id.toLowerCase().includes(q)) ||
+                                (a.model && a.model.toLowerCase().includes(q)) ||
+                                (a.category && a.category.toLowerCase().includes(q)) ||
+                                (a.ip_address && a.ip_address.toLowerCase().includes(q)) ||
+                                (a.rack_name && a.rack_name.toLowerCase().includes(q))
+                              );
+                            })
+                            .map((a) => (
+                              <tr
+                                key={a.id}
+                                onClick={() => {
+                                  if (onSelectAsset) {
+                                    setDetailSiteModalOpen(false);
+                                    onSelectAsset(String(a.id || a.asset_id));
+                                  }
+                                }}
+                                className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                                title="Click to view full asset details"
+                              >
+                                <td className="px-4 py-2.5 font-mono font-bold text-blue-600 group-hover:underline">
+                                  {a.asset_id}
+                                </td>
+                                <td className="px-4 py-2.5 font-semibold text-slate-900 group-hover:text-blue-600">
+                                  {a.hostname}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-600">
+                                  {a.model} <span className="text-slate-400">({a.manufacturer})</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700">
+                                    {a.category}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-slate-600">{a.ip_address || "—"}</td>
+                                <td className="px-4 py-2.5 text-slate-600">
+                                  {a.rack_name || "—"} {a.rack_position ? `(${a.rack_position})` : ""}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                      a.status === "Deployed" || a.status === "Operational"
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                  >
+                                    {a.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================== */}
+      {/* MODAL 7: BUILDING INTERACTIVE DETAIL                                     */}
+      {/* ======================================================================== */}
+      {detailBuildingModalOpen && selectedBuildingDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-fadeIn my-6 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                  <BuildingIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      {selectedBuildingDetail.code}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const s = locations.find((l) => l.id === selectedBuildingDetail.location_id || l.name === selectedBuildingDetail.location_name);
+                        if (s) {
+                          setDetailBuildingModalOpen(false);
+                          openSiteDetail(s, "overview");
+                        }
+                      }}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-pointer"
+                      title="Click to view parent site"
+                    >
+                      Site: {selectedBuildingDetail.location_name}
+                    </button>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 mt-0.5">{selectedBuildingDetail.name}</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailBuildingModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Subtabs */}
+            <div className="flex items-center space-x-2 px-6 border-b border-slate-200 bg-white shrink-0 overflow-x-auto">
+              {[
+                { id: "overview", label: "Overview & Specs" },
+                {
+                  id: "floors",
+                  label: `Floors & Rooms (${selectedBuildingDetail.floors?.length || selectedBuildingDetail.floor_count || 0})`,
+                },
+                {
+                  id: "racks",
+                  label: `Racks (${selectedBuildingDetail.racks?.length || selectedBuildingDetail.rack_count || 0})`,
+                },
+                { id: "assets", label: `Installed Assets (${buildingAssets.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setBuildingDetailTab(tab.id as any)}
+                  className={`px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    buildingDetailTab === tab.id
+                      ? "border-indigo-600 text-indigo-600 font-bold"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Modal Body Content */}
+            <div className="p-6 overflow-y-auto space-y-5 text-xs flex-1">
+              {/* TAB: OVERVIEW */}
+              {buildingDetailTab === "overview" && (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Floors</span>
+                      <span className="text-xl font-bold text-slate-900 mt-1 block">
+                        {selectedBuildingDetail.floors?.length || selectedBuildingDetail.floor_count || 0}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Racks</span>
+                      <span className="text-xl font-bold text-slate-900 mt-1 block">
+                        {selectedBuildingDetail.racks?.length || selectedBuildingDetail.rack_count || 0}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Parent Site</span>
+                      <span className="text-sm font-bold text-slate-800 mt-1 block truncate">
+                        {selectedBuildingDetail.location_name || "—"}
+                      </span>
+                    </div>
+                    <div className="bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-indigo-600 font-bold uppercase block">Installed Assets</span>
+                      <span className="text-xl font-bold text-indigo-700 mt-1 block">
+                        {buildingAssets.length} units
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Address / Location</span>
+                    <p className="font-semibold text-slate-800 text-sm">{selectedBuildingDetail.name}</p>
+                    <p className="text-slate-600 flex items-start space-x-2">
+                      <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <span>{selectedBuildingDetail.address || "Same as Parent Facility"}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB: FLOORS */}
+              {buildingDetailTab === "floors" && (
+                <div className="space-y-4">
+                  {!selectedBuildingDetail.floors || selectedBuildingDetail.floors.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No floor levels recorded for this building.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedBuildingDetail.floors.map((flr: any) => (
+                        <div key={flr.id} className="bg-white border border-slate-200 rounded-xl p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono font-bold text-base text-blue-600">{flr.floor_number}</span>
+                            <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                              {flr.rack_count} racks
+                            </span>
+                          </div>
+                          <div className="font-semibold text-slate-800 mt-1">{flr.floor_name}</div>
+                          {flr.racks && flr.racks.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-slate-100 space-y-1">
+                              <span className="text-[10px] text-slate-400 font-semibold block uppercase">Racks in this floor:</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {flr.racks.map((rk: any) => (
+                                  <button
+                                    key={rk.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setDetailBuildingModalOpen(false);
+                                      openRackDetail(rk, "overview");
+                                    }}
+                                    className="px-2 py-0.5 rounded bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 text-[10px] font-semibold cursor-pointer transition-colors"
+                                  >
+                                    {rk.rack_name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: RACKS */}
+              {buildingDetailTab === "racks" && (
+                <div className="space-y-4">
+                  {!selectedBuildingDetail.racks || selectedBuildingDetail.racks.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No racks housed in this building yet.
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="px-4 py-3">Rack</th>
+                            <th className="px-4 py-3">Floor / Room</th>
+                            <th className="px-4 py-3">Power Spec</th>
+                            <th className="px-4 py-3 text-center">Capacity</th>
+                            <th className="px-4 py-3 text-center">Occupancy</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {selectedBuildingDetail.racks.map((r: any) => (
+                            <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="font-bold text-slate-900">{r.rack_name}</div>
+                                <div className="font-mono text-[10px] text-slate-500">{r.rack_number}</div>
+                              </td>
+                              <td className="px-4 py-3 text-slate-600">
+                                {r.floor_name} • {r.room}
+                              </td>
+                              <td className="px-4 py-3 text-slate-600">
+                                {r.power_feed} <span className="text-slate-400">({r.max_power_kw})</span>
+                              </td>
+                              <td className="px-4 py-3 text-center font-bold text-slate-700">{r.total_u}U</td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="font-bold text-blue-600">{r.asset_count} assets</span>
+                                <span className="text-slate-400 text-[10px] ml-1">({r.utilization_pct}%)</span>
+                              </td>
+                              <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDetailBuildingModalOpen(false);
+                                    openRackDetail(r, "overview");
+                                  }}
+                                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded transition-colors cursor-pointer"
+                                >
+                                  Details
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedElevationRackId(r.id);
+                                    setActiveTab("elevation");
+                                    setDetailBuildingModalOpen(false);
+                                  }}
+                                  className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded transition-colors inline-flex items-center space-x-1 cursor-pointer"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>Elevation</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: ASSETS */}
+              {buildingDetailTab === "assets" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search devices in this building..."
+                        value={buildingAssetSearch}
+                        onChange={(e) => setBuildingAssetSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <span className="text-slate-400 text-xs">
+                      Total: <span className="font-bold text-slate-800">{buildingAssets.length}</span> devices
+                    </span>
+                  </div>
+
+                  {buildingDetailLoading ? (
+                    <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
+                      <RefreshCw className="w-5 h-5 text-indigo-600 animate-spin" />
+                      <span>Loading building assets...</span>
+                    </div>
+                  ) : buildingAssets.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No assets found housed in this building.
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-[460px] overflow-y-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2.5">Asset ID</th>
+                            <th className="px-4 py-2.5">Hostname</th>
+                            <th className="px-4 py-2.5">Model / Vendor</th>
+                            <th className="px-4 py-2.5">Category</th>
+                            <th className="px-4 py-2.5">Management IP</th>
+                            <th className="px-4 py-2.5">Rack & Floor</th>
+                            <th className="px-4 py-2.5">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {buildingAssets
+                            .filter((a) => {
+                              if (!buildingAssetSearch) return true;
+                              const q = buildingAssetSearch.toLowerCase();
+                              return (
+                                (a.hostname && a.hostname.toLowerCase().includes(q)) ||
+                                (a.asset_id && a.asset_id.toLowerCase().includes(q)) ||
+                                (a.model && a.model.toLowerCase().includes(q)) ||
+                                (a.category && a.category.toLowerCase().includes(q)) ||
+                                (a.ip_address && a.ip_address.toLowerCase().includes(q)) ||
+                                (a.rack_name && a.rack_name.toLowerCase().includes(q))
+                              );
+                            })
+                            .map((a) => (
+                              <tr
+                                key={a.id}
+                                onClick={() => {
+                                  if (onSelectAsset) {
+                                    setDetailBuildingModalOpen(false);
+                                    onSelectAsset(String(a.id || a.asset_id));
+                                  }
+                                }}
+                                className="hover:bg-indigo-50/50 transition-colors cursor-pointer group"
+                                title="Click to view full asset details"
+                              >
+                                <td className="px-4 py-2.5 font-mono font-bold text-indigo-600 group-hover:underline">
+                                  {a.asset_id}
+                                </td>
+                                <td className="px-4 py-2.5 font-semibold text-slate-900 group-hover:text-indigo-600">
+                                  {a.hostname}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-600">
+                                  {a.model} <span className="text-slate-400">({a.manufacturer})</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700">
+                                    {a.category}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-slate-600">{a.ip_address || "—"}</td>
+                                <td className="px-4 py-2.5 text-slate-600">
+                                  {a.rack_name || "—"} {a.rack_position ? `(${a.rack_position})` : ""}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                      a.status === "Deployed" || a.status === "Operational"
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                  >
+                                    {a.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================== */}
+      {/* MODAL 8: RACK INTERACTIVE DETAIL                                         */}
+      {/* ======================================================================== */}
+      {detailRackModalOpen && selectedRackDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-fadeIn my-6 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                  <Server className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                      {selectedRackDetail.rack_number || `RK-${selectedRackDetail.rack_name}`}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">
+                      {selectedRackDetail.total_u || 42}U Standard Rack
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 mt-0.5">{selectedRackDetail.rack_name}</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Location: {selectedRackDetail.location_name} • {selectedRackDetail.building_name || "Main Building"} • {selectedRackDetail.floor_name} • {selectedRackDetail.room}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailRackModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Subtabs */}
+            <div className="flex items-center space-x-2 px-6 border-b border-slate-200 bg-white shrink-0 overflow-x-auto">
+              {[
+                { id: "overview", label: "Rack Specifications & Power" },
+                { id: "assets", label: `Mounted Devices (${rackAssets.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setRackDetailTab(tab.id as any)}
+                  className={`px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    rackDetailTab === tab.id
+                      ? "border-blue-600 text-blue-600 font-bold"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Modal Body Content */}
+            <div className="p-6 overflow-y-auto space-y-5 text-xs flex-1">
+              {/* TAB: OVERVIEW */}
+              {rackDetailTab === "overview" && (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Capacity</span>
+                      <span className="text-xl font-bold text-slate-900 mt-1 block">
+                        {selectedRackDetail.total_u || 42}U
+                      </span>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-blue-600 font-bold uppercase block">Occupied Units</span>
+                      <span className="text-xl font-bold text-blue-700 mt-1 block">
+                        {selectedRackDetail.occupied_u || rackAssets.length}U
+                      </span>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-emerald-600 font-bold uppercase block">Available Units</span>
+                      <span className="text-xl font-bold text-emerald-700 mt-1 block">
+                        {Math.max(0, (selectedRackDetail.total_u || 42) - (selectedRackDetail.occupied_u || rackAssets.length))}U
+                      </span>
+                    </div>
+                    <div className="bg-purple-50 border border-purple-200 p-3.5 rounded-xl">
+                      <span className="text-[10px] text-purple-600 font-bold uppercase block">Space Utilization</span>
+                      <span className="text-xl font-bold text-purple-700 mt-1 block">
+                        {selectedRackDetail.utilization_pct || Math.round(((rackAssets.length / (selectedRackDetail.total_u || 42)) * 100) * 10) / 10}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Utilization Progress Bar */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-700">Vertical Space Consumption</span>
+                      <span className="font-bold text-blue-600">
+                        {selectedRackDetail.occupied_u || rackAssets.length} of {selectedRackDetail.total_u || 42}U Utilized
+                      </span>
+                    </div>
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"
+                        style={{
+                          width: `${Math.min(
+                            ((selectedRackDetail.occupied_u || rackAssets.length) / (selectedRackDetail.total_u || 42)) * 100,
+                            100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Power & Facility Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Power Specification</span>
+                      <p className="font-semibold text-slate-800 text-sm flex items-center space-x-2">
+                        <Zap className="w-4 h-4 text-amber-500" />
+                        <span>{selectedRackDetail.power_feed}</span>
+                      </p>
+                      <p className="text-slate-500 pt-1">
+                        Max Power Capacity: <span className="font-bold text-slate-700">{selectedRackDetail.max_power_kw}</span>
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Hall & Enclosure</span>
+                      <p className="font-semibold text-slate-800 text-sm flex items-center space-x-2">
+                        <Box className="w-4 h-4 text-blue-500" />
+                        <span>{selectedRackDetail.room}</span>
+                      </p>
+                      <p className="text-slate-500 pt-1">
+                        Floor Level: <span className="font-bold text-slate-700">{selectedRackDetail.floor_name}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Jump to Elevation Graphic */}
+                  <div className="pt-2 flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedElevationRackId(selectedRackDetail.id);
+                        setActiveTab("elevation");
+                        setDetailRackModalOpen(false);
+                      }}
+                      className="px-4 py-2.5 bg-[#1E60D5] hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm transition-all flex items-center space-x-2 cursor-pointer"
+                    >
+                      <HardDrive className="w-4 h-4" />
+                      <span>Open 42U Visual Elevation Map</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRackDetailTab("assets")}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-all cursor-pointer"
+                    >
+                      Inspect Devices Table ({rackAssets.length})
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB: MOUNTED DEVICES */}
+              {rackDetailTab === "assets" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search devices mounted in this rack..."
+                        value={rackAssetSearch}
+                        onChange={(e) => setRackAssetSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedElevationRackId(selectedRackDetail.id);
+                        setActiveTab("elevation");
+                        setDetailRackModalOpen(false);
+                      }}
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-semibold flex items-center space-x-1 cursor-pointer"
+                    >
+                      <HardDrive className="w-3.5 h-3.5" />
+                      <span>View Elevation</span>
+                    </button>
+                  </div>
+
+                  {rackDetailLoading ? (
+                    <div className="py-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-2">
+                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+                      <span>Loading mounted rack devices...</span>
+                    </div>
+                  ) : rackAssets.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
+                      No devices currently mounted in this rack.
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-[460px] overflow-y-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2.5">Slot / U</th>
+                            <th className="px-4 py-2.5">Asset ID</th>
+                            <th className="px-4 py-2.5">Hostname</th>
+                            <th className="px-4 py-2.5">Model / Vendor</th>
+                            <th className="px-4 py-2.5">Category</th>
+                            <th className="px-4 py-2.5">Management IP</th>
+                            <th className="px-4 py-2.5">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {rackAssets
+                            .filter((a) => {
+                              if (!rackAssetSearch) return true;
+                              const q = rackAssetSearch.toLowerCase();
+                              return (
+                                (a.hostname && a.hostname.toLowerCase().includes(q)) ||
+                                (a.asset_id && a.asset_id.toLowerCase().includes(q)) ||
+                                (a.model && a.model.toLowerCase().includes(q)) ||
+                                (a.category && a.category.toLowerCase().includes(q)) ||
+                                (a.ip_address && a.ip_address.toLowerCase().includes(q)) ||
+                                (a.rack_position && a.rack_position.toLowerCase().includes(q))
+                              );
+                            })
+                            .map((a) => (
+                              <tr
+                                key={a.id}
+                                onClick={() => {
+                                  if (onSelectAsset) {
+                                    setDetailRackModalOpen(false);
+                                    onSelectAsset(String(a.id || a.asset_id));
+                                  }
+                                }}
+                                className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                                title="Click to view full asset details"
+                              >
+                                <td className="px-4 py-2.5">
+                                  <span className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-slate-100 text-slate-800">
+                                    {a.rack_position || "U--"}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 font-mono font-bold text-blue-600 group-hover:underline">
+                                  {a.asset_id}
+                                </td>
+                                <td className="px-4 py-2.5 font-semibold text-slate-900 group-hover:text-blue-600">
+                                  {a.hostname}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-600">
+                                  {a.model} <span className="text-slate-400">({a.manufacturer})</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700">
+                                    {a.category}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-slate-600">{a.ip_address || "—"}</td>
+                                <td className="px-4 py-2.5">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                      a.status === "Deployed" || a.status === "Operational"
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                  >
+                                    {a.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

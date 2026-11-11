@@ -49,7 +49,14 @@ def format_location_out(loc: Location, db: Session) -> LocationOut:
                     utilization_pct=round((asset_cnt / (r.total_u or 42)) * 100, 1)
                 ))
 
-    asset_count = db.query(Asset).filter(Asset.location_id == loc.id, Asset.is_deleted == False).count()
+    rack_ids = [r.id for b in loc.buildings for f in b.floors for r in f.racks]
+    bldg_ids = [b.id for b in loc.buildings]
+    conds = [Asset.location_id == loc.id]
+    if rack_ids:
+        conds.append(Asset.rack_id.in_(rack_ids))
+    if bldg_ids:
+        conds.append(Asset.building_id.in_(bldg_ids))
+    asset_count = db.query(Asset).filter(Asset.is_deleted == False).filter(or_(*conds)).count()
     return LocationOut(
         id=loc.id,
         code=loc.code,
@@ -68,6 +75,39 @@ def format_location_out(loc: Location, db: Session) -> LocationOut:
         rack_count=len(racks_out),
         racks=racks_out
     )
+
+def serialize_asset_summary(a: Asset, db: Session):
+    rack = a.rack
+    floor = rack.floor if rack else None
+    bldg = floor.building if floor else None
+    loc = a.location or (bldg.location if bldg else None)
+
+    if not bldg and a.building_id:
+        bldg = db.query(Building).filter_by(id=a.building_id).first()
+        if bldg and not loc:
+            loc = bldg.location
+
+    return {
+        "id": a.id,
+        "asset_id": a.asset_id,
+        "hostname": a.hostname,
+        "device_name": a.device_name or a.hostname,
+        "model": a.model.model_name if a.model else (a.device_name or "-"),
+        "manufacturer": a.manufacturer or (a.model.manufacturer if a.model else "-"),
+        "category": a.category.name if a.category else (a.device_type or "Network Device"),
+        "device_role": a.device_role or "-",
+        "status": a.operational_status or "Deployed",
+        "condition": a.asset_condition or "Operational",
+        "ip_address": a.management_ip or "-",
+        "serial_number": a.serial_number or "-",
+        "rack_position": a.rack_position or "-",
+        "rack_name": rack.rack_name if rack else "-",
+        "rack_id": a.rack_id,
+        "floor_name": floor.floor_number if floor else "-",
+        "building_name": bldg.name if bldg else "-",
+        "location_name": loc.name if loc else "-",
+        "location_code": loc.code if loc else "-"
+    }
 
 def format_rack_out(r: Rack, db: Session) -> RackOut:
     f = r.floor
@@ -125,6 +165,83 @@ def list_buildings(
             rack_count=r_cnt
         ))
     return results
+
+@router.get("/buildings/{id}")
+def get_building_detail(id: int, db: Session = Depends(get_db)):
+    bldg = db.query(Building).filter_by(id=id).first()
+    if not bldg:
+        raise HTTPException(status_code=404, detail="Building not found")
+
+    floors_data = []
+    all_racks = []
+    for flr in bldg.floors:
+        flr_racks = []
+        for r in flr.racks:
+            cnt = db.query(Asset).filter(Asset.rack_id == r.id, Asset.is_deleted == False).count()
+            rack_dict = {
+                "id": r.id,
+                "rack_name": r.rack_name,
+                "rack_number": r.rack_number,
+                "room": r.room,
+                "total_u": r.total_u or 42,
+                "power_feed": r.power_feed,
+                "max_power_kw": r.max_power_kw,
+                "floor_id": flr.id,
+                "floor_name": flr.floor_number,
+                "building_name": bldg.name,
+                "location_name": bldg.location.name if bldg.location else "—",
+                "location_code": bldg.location.code if bldg.location else "—",
+                "asset_count": cnt,
+                "occupied_u": cnt,
+                "available_u": max(0, (r.total_u or 42) - cnt),
+                "utilization_pct": round((cnt / (r.total_u or 42)) * 100, 1)
+            }
+            flr_racks.append(rack_dict)
+            all_racks.append(rack_dict)
+
+        floors_data.append({
+            "id": flr.id,
+            "floor_number": flr.floor_number,
+            "floor_name": flr.floor_name,
+            "building_id": flr.building_id,
+            "rack_count": len(flr.racks),
+            "racks": flr_racks
+        })
+
+    rack_ids = [r.id for flr in bldg.floors for r in flr.racks]
+    conds = [Asset.building_id == bldg.id]
+    if rack_ids:
+        conds.append(Asset.rack_id.in_(rack_ids))
+    total_assets = db.query(Asset).filter(Asset.is_deleted == False).filter(or_(*conds)).count()
+
+    return {
+        "id": bldg.id,
+        "code": bldg.code,
+        "name": bldg.name,
+        "address": bldg.address,
+        "location_id": bldg.location_id,
+        "location_name": bldg.location.name if bldg.location else "—",
+        "location_code": bldg.location.code if bldg.location else "—",
+        "floor_count": len(floors_data),
+        "rack_count": len(all_racks),
+        "asset_count": total_assets,
+        "floors": floors_data,
+        "racks": all_racks
+    }
+
+@router.get("/buildings/{id}/assets")
+def get_building_assets(id: int, db: Session = Depends(get_db)):
+    bldg = db.query(Building).filter_by(id=id).first()
+    if not bldg:
+        raise HTTPException(status_code=404, detail="Building not found")
+
+    rack_ids = [r.id for f in bldg.floors for r in f.racks]
+    conds = [Asset.building_id == bldg.id]
+    if rack_ids:
+        conds.append(Asset.rack_id.in_(rack_ids))
+
+    assets = db.query(Asset).filter(Asset.is_deleted == False).filter(or_(*conds)).all()
+    return [serialize_asset_summary(a, db) for a in assets]
 
 @router.post("/buildings", response_model=BuildingOut)
 def create_building(bldg_in: BuildingCreate, db: Session = Depends(get_db)):
@@ -452,6 +569,18 @@ def get_rack_detail(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Rack not found")
     return format_rack_out(r, db)
 
+@router.get("/racks/{id}/assets")
+def get_rack_assets(id: int, db: Session = Depends(get_db)):
+    rack = db.query(Rack).filter_by(id=id).first()
+    if not rack:
+        raise HTTPException(status_code=404, detail="Rack not found")
+
+    assets = db.query(Asset).filter(
+        Asset.rack_id == rack.id,
+        Asset.is_deleted == False
+    ).order_by(Asset.rack_position.desc()).all()
+    return [serialize_asset_summary(a, db) for a in assets]
+
 @router.post("/racks", response_model=RackOut)
 def create_rack(rack_in: RackCreate, db: Session = Depends(get_db)):
     floor_id = rack_in.floor_id
@@ -597,6 +726,23 @@ def get_location_detail(id: int, db: Session = Depends(get_db)):
     if not loc:
         raise HTTPException(status_code=404, detail="Location not found")
     return format_location_out(loc, db)
+
+@router.get("/{id}/assets")
+def get_location_assets(id: int, db: Session = Depends(get_db)):
+    loc = db.query(Location).filter_by(id=id).first()
+    if not loc:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    rack_ids = [r.id for b in loc.buildings for f in b.floors for r in f.racks]
+    bldg_ids = [b.id for b in loc.buildings]
+    conds = [Asset.location_id == loc.id]
+    if rack_ids:
+        conds.append(Asset.rack_id.in_(rack_ids))
+    if bldg_ids:
+        conds.append(Asset.building_id.in_(bldg_ids))
+
+    assets = db.query(Asset).filter(Asset.is_deleted == False).filter(or_(*conds)).all()
+    return [serialize_asset_summary(a, db) for a in assets]
 
 @router.put("/{id}", response_model=LocationOut)
 def update_location(id: int, loc_in: LocationUpdate, db: Session = Depends(get_db)):
