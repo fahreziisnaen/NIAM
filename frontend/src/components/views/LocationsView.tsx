@@ -22,6 +22,7 @@ import {
   HardDrive
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 interface LocationsViewProps {
   initialSub?: string;
@@ -884,20 +885,21 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
           {/* Rack Selector Bar */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <Server className="w-5 h-5 text-blue-600" />
-              <div>
-                <label className="block text-[10px] font-bold uppercase text-slate-400">Select Rack to Inspect</label>
-                <select
-                  value={selectedElevationRackId || ""}
-                  onChange={(e) => setSelectedElevationRackId(Number(e.target.value))}
-                  className="mt-0.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  {racks.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.rack_name} ({r.rack_number}) — {r.location_name} / {r.room}
-                    </option>
-                  ))}
-                </select>
+              <Server className="w-5 h-5 text-blue-600 shrink-0" />
+              <div className="w-72 sm:w-80">
+                <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Select Rack to Inspect</label>
+                <SearchableSelect
+                  options={racks.map((r) => ({
+                    value: r.id,
+                    label: `${r.rack_name} (${r.rack_number})`,
+                    subLabel: `${r.location_name} / ${r.room}`,
+                  }))}
+                  value={selectedElevationRackId}
+                  onChange={(val) => setSelectedElevationRackId(Number(val))}
+                  placeholder="Select rack to inspect..."
+                  searchPlaceholder="Search rack name or room..."
+                  searchThreshold={10}
+                />
               </div>
             </div>
 

@@ -27,6 +27,7 @@ import {
   Eye
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 interface TopologyViewProps {
   onSelectAsset?: (assetId: string) => void;
@@ -748,24 +749,18 @@ export function TopologyView({ onSelectAsset }: TopologyViewProps = {}) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Source Device *</label>
-                    <input
-                      type="text"
-                      placeholder="Filter device..."
-                      value={srcSearch}
-                      onChange={(e) => setSrcSearch(e.target.value)}
-                      className="w-full mb-1.5 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-md"
-                    />
-                    <select
+                    <SearchableSelect
+                      options={devices.map((d) => ({
+                        value: d.id,
+                        label: d.hostname,
+                        subLabel: `${d.management_ip || "-"} - ${d.model || ""}`,
+                      }))}
                       value={formSourceAssetId}
-                      onChange={(e) => setFormSourceAssetId(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    >
-                      {filteredSrcDevices.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.hostname} ({d.management_ip}) - {d.model}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setFormSourceAssetId(Number(val))}
+                      placeholder="Search source device..."
+                      searchPlaceholder="Search by hostname, IP, model..."
+                      searchThreshold={10}
+                    />
                   </div>
 
                   <div>
@@ -790,24 +785,18 @@ export function TopologyView({ onSelectAsset }: TopologyViewProps = {}) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Target Device *</label>
-                    <input
-                      type="text"
-                      placeholder="Filter device..."
-                      value={tgtSearch}
-                      onChange={(e) => setTgtSearch(e.target.value)}
-                      className="w-full mb-1.5 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-md"
-                    />
-                    <select
+                    <SearchableSelect
+                      options={devices.map((d) => ({
+                        value: d.id,
+                        label: d.hostname,
+                        subLabel: `${d.management_ip || "-"} - ${d.model || ""}`,
+                      }))}
                       value={formTargetAssetId}
-                      onChange={(e) => setFormTargetAssetId(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    >
-                      {filteredTgtDevices.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.hostname} ({d.management_ip}) - {d.model}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setFormTargetAssetId(Number(val))}
+                      placeholder="Search target device..."
+                      searchPlaceholder="Search by hostname, IP, model..."
+                      searchThreshold={10}
+                    />
                   </div>
 
                   <div>

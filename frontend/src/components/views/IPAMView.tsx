@@ -24,6 +24,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 interface IPAMViewProps {
   onSelectAsset?: (assetId: string) => void;
@@ -940,24 +941,18 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Select Target Device *</label>
-                <input
-                  type="text"
-                  placeholder="Search device by hostname or asset ID..."
-                  value={assetSearch}
-                  onChange={(e) => setAssetSearch(e.target.value)}
-                  className="w-full mb-2 px-2.5 py-1 text-[11px] bg-slate-50 border border-slate-200 rounded-md"
-                />
-                <select
+                <SearchableSelect
+                  options={assignableAssets.map((a) => ({
+                    value: a.id,
+                    label: `${a.hostname} (${a.asset_id})`,
+                    subLabel: `${a.model || ""} [Current IP: ${a.management_ip || "-"}]`,
+                  }))}
                   value={assignForm.asset_id}
-                  onChange={(e) => setAssignForm({ ...assignForm, asset_id: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-800 focus:bg-white"
-                >
-                  {filteredAssets.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.hostname} ({a.asset_id}) - {a.model} [Current IP: {a.management_ip}]
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setAssignForm({ ...assignForm, asset_id: Number(val) })}
+                  placeholder="Search device by hostname or asset tag..."
+                  searchPlaceholder="Type hostname, tag, or IP..."
+                  searchThreshold={10}
+                />
               </div>
 
               <div>

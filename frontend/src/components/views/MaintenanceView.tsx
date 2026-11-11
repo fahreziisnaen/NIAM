@@ -22,6 +22,7 @@ import {
   Check
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 interface MaintenanceViewProps {
   onSelectAsset?: (assetId: string) => void;
@@ -582,17 +583,18 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
                 </div>
                 <div>
                   <label className="text-slate-700 block mb-1 font-semibold">Target Hardware Asset *</label>
-                  <select
+                  <SearchableSelect
+                    options={availableAssets.map((a) => ({
+                      value: a.id,
+                      label: `${a.hostname} (${a.asset_id})`,
+                      subLabel: a.model ? `${a.model} [${a.vendor || ""}]` : a.vendor,
+                    }))}
                     value={assetId}
-                    onChange={(e) => setAssetId(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg bg-white focus:border-blue-600 focus:outline-none"
-                  >
-                    {availableAssets.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.hostname} ({a.asset_id})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setAssetId(Number(val))}
+                    placeholder="Search & select device..."
+                    searchPlaceholder="Type hostname, asset tag, or model..."
+                    searchThreshold={10}
+                  />
                 </div>
               </div>
 
