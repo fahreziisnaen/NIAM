@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Globe,
   Search,
@@ -21,7 +21,14 @@ import {
   Shield,
   Activity,
   Eye,
-  ExternalLink
+  ExternalLink,
+  LayoutGrid,
+  List,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal
 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
@@ -36,6 +43,18 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
   const [assignableAssets, setAssignableAssets] = useState<any[]>([]);
   const [selectedSubnet, setSelectedSubnet] = useState<string>("10.200.100.0/24");
   const [selectedVlanId, setSelectedVlanId] = useState<number | null>(null);
+
+  // High-Scale VLAN Fleet Management State (Optimized for 100+ VLANs)
+  const [vlanSearch, setVlanSearch] = useState<string>("");
+  const [vlanRangeFilter, setVlanRangeFilter] = useState<string>("ALL");
+  const [vlanViewMode, setVlanViewMode] = useState<"cards" | "table">("cards");
+  const [vlanCollapsed, setVlanCollapsed] = useState<boolean>(false);
+  const [vlanPage, setVlanPage] = useState<number>(1);
+  const [vlanPageSize, setVlanPageSize] = useState<number>(10);
+
+  // IP Address Table Pagination State
+  const [ipPage, setIpPage] = useState<number>(1);
+  const [ipPageSize, setIpPageSize] = useState<number>(25);
 
   // IP Detail Modal State
   const [ipDetailModalOpen, setIpDetailModalOpen] = useState(false);
@@ -439,6 +458,73 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
     );
   });
 
+  // Currently Active VLAN
+  const currentVlan = useMemo(() => {
+    return vlans.find((v) => v.subnet === selectedSubnet) || vlans[0] || null;
+  }, [vlans, selectedSubnet]);
+
+  // Filtered VLANs for High-Scale Fleet (100+ VLANs)
+  const filteredVlans = useMemo(() => {
+    let result = vlans;
+
+    // Filter by range
+    if (vlanRangeFilter !== "ALL") {
+      if (vlanRangeFilter === "1-99") {
+        result = result.filter((v) => v.vlan_id >= 1 && v.vlan_id <= 99);
+      } else if (vlanRangeFilter === "100-199") {
+        result = result.filter((v) => v.vlan_id >= 100 && v.vlan_id <= 199);
+      } else if (vlanRangeFilter === "200-299") {
+        result = result.filter((v) => v.vlan_id >= 200 && v.vlan_id <= 299);
+      } else if (vlanRangeFilter === "300-399") {
+        result = result.filter((v) => v.vlan_id >= 300 && v.vlan_id <= 399);
+      } else if (vlanRangeFilter === "400+") {
+        result = result.filter((v) => v.vlan_id >= 400);
+      }
+    }
+
+    // Filter by search query (VLAN ID, name, subnet, gateway, description)
+    if (vlanSearch.trim()) {
+      const q = vlanSearch.toLowerCase().trim();
+      result = result.filter((v) => {
+        return (
+          String(v.vlan_id).includes(q) ||
+          v.name.toLowerCase().includes(q) ||
+          v.subnet.toLowerCase().includes(q) ||
+          v.gateway.toLowerCase().includes(q) ||
+          (v.description && v.description.toLowerCase().includes(q))
+        );
+      });
+    }
+
+    return result;
+  }, [vlans, vlanSearch, vlanRangeFilter]);
+
+  // Paginated VLANs for Grid & Table
+  const totalVlanPages = Math.ceil(filteredVlans.length / vlanPageSize) || 1;
+  const paginatedVlans = useMemo(() => {
+    if (vlanPageSize === -1) return filteredVlans;
+    const start = (vlanPage - 1) * vlanPageSize;
+    return filteredVlans.slice(start, start + vlanPageSize);
+  }, [filteredVlans, vlanPage, vlanPageSize]);
+
+  // Reset VLAN page when filter changes
+  useEffect(() => {
+    setVlanPage(1);
+  }, [vlanSearch, vlanRangeFilter, vlanPageSize]);
+
+  // IP Address Table Pagination
+  const totalIpPages = Math.ceil(addresses.length / ipPageSize) || 1;
+  const paginatedAddresses = useMemo(() => {
+    if (ipPageSize === -1) return addresses;
+    const start = (ipPage - 1) * ipPageSize;
+    return addresses.slice(start, start + ipPageSize);
+  }, [addresses, ipPage, ipPageSize]);
+
+  // Reset IP page when filter changes
+  useEffect(() => {
+    setIpPage(1);
+  }, [selectedSubnet, statusFilter, search, ipPageSize]);
+
   return (
     <div className="space-y-6">
       {/* Toast Notifications */}
@@ -455,8 +541,8 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header with Quick Jump & Global Action Buttons */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             IP Address Management (IPAM) & Subnet Planner
@@ -466,8 +552,30 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
           </p>
         </div>
 
-        {/* Global Action Buttons */}
-        <div className="flex items-center space-x-2">
+        {/* Global Action Buttons & Quick Jump */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Jump Combobox for High-Scale VLAN fleets */}
+          <div className="w-64 sm:w-72">
+            <SearchableSelect
+              options={vlans.map((v) => ({
+                value: v.id,
+                label: `VLAN ${v.vlan_id} — ${v.name}`,
+                subLabel: `${v.subnet} (GW: ${v.gateway}) [${v.ip_count} IPs]`,
+              }))}
+              value={selectedVlanId}
+              onChange={(val) => {
+                const target = vlans.find((v) => Number(v.id) === Number(val));
+                if (target) {
+                  setSelectedVlanId(target.id);
+                  setSelectedSubnet(target.subnet);
+                }
+              }}
+              placeholder="⚡ Quick Jump to any VLAN..."
+              searchPlaceholder="Type VLAN ID or name..."
+              searchThreshold={10}
+            />
+          </div>
+
           <button
             onClick={() => {
               loadMasterData();
@@ -495,7 +603,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
             className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg shadow-sm transition-all cursor-pointer"
           >
             <Layers className="w-4 h-4 text-slate-500" />
-            <span>Generate IP Pool</span>
+            <span>Generate Pool</span>
           </button>
 
           <button
@@ -508,74 +616,389 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
         </div>
       </div>
 
-      {/* VLAN Selector Cards */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Select Active VLAN Subnet
-          </span>
-          <span className="text-[11px] text-slate-500">{vlans.length} configured VLANs</span>
+      {/* High-Scale 802.1Q VLAN Fleet & Subnet Section */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        {/* Section Header with Quick Search, Filter Range, View Switcher & Collapse */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-sm font-bold text-slate-900">802.1Q VLAN Fleet & Subnets</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  {vlans.length} VLANs Configured
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Switch active subnet by clicking a card or searching below
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Quick Search */}
+            <div className="relative w-44 sm:w-56">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search VLAN or subnet..."
+                value={vlanSearch}
+                onChange={(e) => setVlanSearch(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              {vlanSearch && (
+                <button
+                  type="button"
+                  onClick={() => setVlanSearch("")}
+                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* View Mode Toggle: Cards vs Table */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setVlanViewMode("cards")}
+                className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                  vlanViewMode === "cards" ? "bg-white text-blue-600 shadow-xs" : "text-slate-500 hover:text-slate-700"
+                }`}
+                title="Cards Grid View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-[11px]">Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVlanViewMode("table")}
+                className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                  vlanViewMode === "table" ? "bg-white text-blue-600 shadow-xs" : "text-slate-500 hover:text-slate-700"
+                }`}
+                title="Table View (Optimized for 100+ VLANs)"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-[11px]">Table</span>
+              </button>
+            </div>
+
+            {/* Collapse Toggle */}
+            <button
+              type="button"
+              onClick={() => setVlanCollapsed((prev) => !prev)}
+              className="px-2.5 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg border border-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+              title={vlanCollapsed ? "Expand VLAN list" : "Collapse VLAN list to focus on IP table"}
+            >
+              {vlanCollapsed ? (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-semibold">Expand</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-semibold">Collapse</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {vlans.map((v) => {
-            const isSelected = selectedSubnet === v.subnet;
-            return (
-              <div
-                key={v.id}
-                onClick={() => {
-                  setSelectedSubnet(v.subnet);
-                  setSelectedVlanId(v.id);
-                }}
-                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  isSelected
-                    ? "bg-white border-blue-600 ring-2 ring-blue-500/20 shadow-md"
-                    : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
+        {/* Range Filter Chips */}
+        {!vlanCollapsed && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3" />
+              <span>Range:</span>
+            </span>
+            {[
+              { id: "ALL", label: `All (${vlans.length})` },
+              { id: "1-99", label: "1-99 Infra/Mgmt" },
+              { id: "100-199", label: "100-199 Core" },
+              { id: "200-299", label: "200-299 Trading" },
+              { id: "300-399", label: "300-399 Server/DMZ" },
+              { id: "400+", label: "400+ Branch/B2B" },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setVlanRangeFilter(chip.id)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                  vlanRangeFilter === chip.id
+                    ? "bg-blue-600 text-white font-bold shadow-xs"
+                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                      VLAN {v.vlan_id}
-                    </span>
-                    <div className="flex items-center space-x-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditVlan(v);
-                        }}
-                        className="p-1 text-slate-400 hover:text-blue-600 rounded"
-                        title="Edit VLAN"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          confirmDelete("vlan", v.id, `VLAN ${v.vlan_id} (${v.name})`);
-                        }}
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded"
-                        title="Delete VLAN"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Collapsed Sticky Banner */}
+        {vlanCollapsed ? (
+          <div className="p-3 bg-gradient-to-r from-blue-50/90 via-slate-50 to-white rounded-xl border border-blue-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-3">
+              <span className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-blue-600 text-white shadow-xs">
+                VLAN {currentVlan?.vlan_id || "Active"}
+              </span>
+              <div>
+                <span className="font-bold text-slate-900">{currentVlan?.name || "Selected Subnet"}</span>
+                <span className="text-slate-400 mx-2">•</span>
+                <span className="font-mono text-blue-600 font-semibold">{selectedSubnet}</span>
+                <span className="text-slate-400 mx-2">•</span>
+                <span className="text-slate-500">GW: {currentVlan?.gateway || "-"}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setVlanCollapsed(false)}
+              className="text-[11px] text-blue-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>Browse All {vlans.length} VLANs</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : vlanViewMode === "cards" ? (
+          /* Cards Grid Mode with Pagination */
+          <div className="space-y-3">
+            {filteredVlans.length === 0 ? (
+              <div className="py-10 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-200">
+                No VLANs matching filter &quot;{vlanSearch || vlanRangeFilter}&quot;.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {paginatedVlans.map((v) => {
+                  const isSelected = selectedSubnet === v.subnet;
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => {
+                        setSelectedSubnet(v.subnet);
+                        setSelectedVlanId(v.id);
+                      }}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? "bg-white border-blue-600 ring-2 ring-blue-500/20 shadow-md"
+                          : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            VLAN {v.vlan_id}
+                          </span>
+                          <div className="flex items-center space-x-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditVlan(v);
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-600 rounded"
+                              title="Edit VLAN"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDelete("vlan", v.id, `VLAN ${v.vlan_id} (${v.name})`);
+                              }}
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                              title="Delete VLAN"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <h3 className="text-xs font-bold text-slate-900 mt-2 truncate">{v.name}</h3>
+                        <p className="text-[11px] font-mono text-slate-500 mt-0.5">{v.subnet}</p>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">GW: {v.gateway}</span>
+                        <span className="font-bold text-blue-600">{v.ip_count} IPs</span>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pagination Controls for VLAN Cards */}
+            {filteredVlans.length > vlanPageSize && (
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                <span>
+                  Showing {Math.min((vlanPage - 1) * vlanPageSize + 1, filteredVlans.length)} to{" "}
+                  {Math.min(vlanPage * vlanPageSize, filteredVlans.length)} of {filteredVlans.length} VLANs
+                </span>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <span>Show:</span>
+                    <select
+                      value={vlanPageSize}
+                      onChange={(e) => setVlanPageSize(Number(e.target.value))}
+                      className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-slate-700"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={-1}>All</option>
+                    </select>
                   </div>
-
-                  <h3 className="text-xs font-bold text-slate-900 mt-2 truncate">{v.name}</h3>
-                  <p className="text-[11px] font-mono text-slate-500 mt-0.5">{v.subnet}</p>
-                </div>
-
-                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">GW: {v.gateway}</span>
-                  <span className="font-bold text-blue-600">{v.ip_count} IPs</span>
+                  <button
+                    type="button"
+                    disabled={vlanPage === 1}
+                    onClick={() => setVlanPage((p) => Math.max(1, p - 1))}
+                    className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 font-medium">Page {vlanPage} of {totalVlanPages}</span>
+                  <button
+                    type="button"
+                    disabled={vlanPage === totalVlanPages}
+                    onClick={() => setVlanPage((p) => Math.min(totalVlanPages, p + 1))}
+                    className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
+        ) : (
+          /* Dense Table Mode for 100+ VLANs */
+          <div className="space-y-3">
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold">
+                  <tr>
+                    <th className="py-2.5 px-3 w-10 text-center">Status</th>
+                    <th className="py-2.5 px-3">VLAN ID</th>
+                    <th className="py-2.5 px-3">VLAN Name</th>
+                    <th className="py-2.5 px-3">Subnet CIDR</th>
+                    <th className="py-2.5 px-3">Default Gateway</th>
+                    <th className="py-2.5 px-3 text-center">Configured IPs</th>
+                    <th className="py-2.5 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedVlans.map((v) => {
+                    const isSelected = selectedSubnet === v.subnet;
+                    return (
+                      <tr
+                        key={v.id}
+                        onClick={() => {
+                          setSelectedSubnet(v.subnet);
+                          setSelectedVlanId(v.id);
+                        }}
+                        className={`hover:bg-blue-50/50 transition-colors cursor-pointer ${
+                          isSelected ? "bg-blue-50/80 font-medium" : ""
+                        }`}
+                      >
+                        <td className="py-2 px-3 text-center">
+                          {isSelected ? (
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block shadow-xs" title="Currently Selected"></span>
+                          ) : (
+                            <span className="w-2 h-2 rounded-full bg-slate-300 inline-block"></span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 font-mono font-bold text-blue-600">
+                          VLAN {v.vlan_id}
+                        </td>
+                        <td className="py-2 px-3 font-semibold text-slate-800">
+                          {v.name}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-slate-600">
+                          {v.subnet}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-slate-500">
+                          {v.gateway}
+                        </td>
+                        <td className="py-2 px-3 text-center font-bold text-slate-700">
+                          {v.ip_count} IPs
+                        </td>
+                        <td className="py-2 px-3 text-right space-x-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditVlan(v);
+                            }}
+                            className="p-1 text-slate-400 hover:text-blue-600 rounded"
+                            title="Edit VLAN"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDelete("vlan", v.id, `VLAN ${v.vlan_id} (${v.name})`);
+                            }}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                            title="Delete VLAN"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls for VLAN Table */}
+            {filteredVlans.length > vlanPageSize && (
+              <div className="flex items-center justify-between pt-1 text-xs text-slate-500">
+                <span>
+                  Showing {Math.min((vlanPage - 1) * vlanPageSize + 1, filteredVlans.length)} to{" "}
+                  {Math.min(vlanPage * vlanPageSize, filteredVlans.length)} of {filteredVlans.length} VLANs
+                </span>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <span>Show:</span>
+                    <select
+                      value={vlanPageSize}
+                      onChange={(e) => setVlanPageSize(Number(e.target.value))}
+                      className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-slate-700"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={-1}>All</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={vlanPage === 1}
+                    onClick={() => setVlanPage((p) => Math.max(1, p - 1))}
+                    className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 font-medium">Page {vlanPage} of {totalVlanPages}</span>
+                  <button
+                    type="button"
+                    disabled={vlanPage === totalVlanPages}
+                    onClick={() => setVlanPage((p) => Math.min(totalVlanPages, p + 1))}
+                    className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Selected Subnet Utilization Bar & Key Stats */}
@@ -683,7 +1106,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {addresses.map((ip) => (
+            {paginatedAddresses.map((ip) => (
               <tr key={ip.id} className="hover:bg-slate-50/60 transition-colors">
                 {/* IP Address */}
                 <td className="px-5 py-3.5">
@@ -804,6 +1227,59 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination Bar for IP Addresses */}
+        {addresses.length > 0 && (
+          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <div className="flex items-center space-x-2">
+              <span>
+                Showing <span className="font-bold text-slate-700">{addresses.length === 0 ? 0 : (ipPage - 1) * ipPageSize + 1}</span> to{" "}
+                <span className="font-bold text-slate-700">
+                  {ipPageSize === -1 ? addresses.length : Math.min(ipPage * ipPageSize, addresses.length)}
+                </span>{" "}
+                of <span className="font-bold text-slate-700">{addresses.length}</span> IP allocations
+              </span>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center space-x-1">
+                <span>Per page:</span>
+                <select
+                  value={ipPageSize}
+                  onChange={(e) => setIpPageSize(Number(e.target.value))}
+                  className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-slate-700 cursor-pointer"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={-1}>All</option>
+                </select>
+              </div>
+            </div>
+
+            {totalIpPages > 1 && ipPageSize !== -1 && (
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  disabled={ipPage === 1}
+                  onClick={() => setIpPage((p) => Math.max(1, p - 1))}
+                  className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                >
+                  Previous
+                </button>
+                <span className="px-2 font-medium">
+                  Page {ipPage} of {totalIpPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={ipPage === totalIpPages}
+                  onClick={() => setIpPage((p) => Math.min(totalIpPages, p + 1))}
+                  className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ======================================================================== */}

@@ -1,7 +1,7 @@
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 import datetime
 import ipaddress
 
@@ -13,11 +13,38 @@ from app.schemas.network import VLANCreate, VLANUpdate, VLANOut, IPAddressCreate
 router = APIRouter(prefix="/ipam", tags=["IP Address Management"])
 
 @router.get("/vlans", response_model=List[VLANOut])
-def list_vlans(db: Session = Depends(get_db)):
-    vlans = db.query(VLAN).order_by(VLAN.vlan_id.asc()).all()
+def list_vlans(
+    search: Optional[str] = Query(None),
+    location_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(VLAN)
+    if search:
+        s = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                VLAN.name.ilike(s),
+                VLAN.subnet.ilike(s),
+                VLAN.gateway.ilike(s),
+                VLAN.description.ilike(s)
+            )
+        )
+    if location_id:
+        query = query.filter(VLAN.location_id == location_id)
+
+    vlans = query.order_by(VLAN.vlan_id.asc()).all()
+
+    # Optimized single-query count aggregation for high-scale VLAN fleets (100+ VLANs)
+    counts = dict(
+        db.query(IPAddress.vlan_id, func.count(IPAddress.id))
+        .filter(IPAddress.vlan_id.isnot(None))
+        .group_by(IPAddress.vlan_id)
+        .all()
+    )
+
     results = []
     for v in vlans:
-        cnt = db.query(IPAddress).filter(IPAddress.vlan_id == v.id).count()
+        cnt = counts.get(v.id, 0)
         results.append(VLANOut(
             id=v.id,
             vlan_id=v.vlan_id,
