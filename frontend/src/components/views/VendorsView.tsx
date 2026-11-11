@@ -93,6 +93,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
   const [vendorAssets, setVendorAssets] = useState<VendorAsset[]>([]);
   const [vendorContracts, setVendorContracts] = useState<VendorContract[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "contracts" | "assets">("overview");
 
   // Add Vendor Modal State
@@ -144,7 +145,8 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
   const openDetailModal = async (vendorId: number, defaultTab: "overview" | "contracts" | "assets" = "overview") => {
     setSelectedVendorId(vendorId);
     setActiveTab(defaultTab);
-    const cached = vendors.find((v) => v.id === vendorId);
+    setDetailError(null);
+    const cached = vendors.find((v) => Number(v.id) === Number(vendorId));
     if (cached) {
       setDetailVendor(cached);
     }
@@ -158,9 +160,13 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
         setDetailVendor(data.vendor);
         setVendorAssets(data.assets || []);
         setVendorContracts(data.contracts || []);
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        setDetailError(errJson.detail || errJson.message || `Server returned error status ${res.status}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load vendor details", err);
+      setDetailError(err?.message || "Failed to reach server");
     } finally {
       setDetailLoading(false);
     }
@@ -675,7 +681,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                <span>Contracts ({vendorContracts.length})</span>
+                <span>Contracts ({vendorContracts.length > 0 ? vendorContracts.length : (detailVendor?.contract_count || 0)})</span>
               </button>
               <button
                 onClick={() => setActiveTab("assets")}
@@ -686,22 +692,36 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                 }`}
               >
                 <Server className="w-4 h-4" />
-                <span>Covered Assets ({vendorAssets.length})</span>
+                <span>Covered Assets ({vendorAssets.length > 0 ? vendorAssets.length : (detailVendor?.asset_count || 0)})</span>
               </button>
             </div>
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1 bg-slate-50/30">
-              {detailLoading ? (
+              {detailLoading && !detailVendor ? (
                 <div className="py-20 text-center text-xs text-slate-400">
-                  Loading vendor information...
+                  <div className="inline-block animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full mb-2"></div>
+                  <p>Loading vendor information...</p>
                 </div>
               ) : !detailVendor ? (
-                <div className="py-20 text-center text-xs text-slate-400">
-                  Vendor details could not be loaded.
+                <div className="py-20 text-center text-xs text-slate-500">
+                  <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                  <p className="font-semibold text-slate-700">Vendor details could not be loaded.</p>
+                  {detailError && <p className="mt-1 text-red-500 font-mono text-[11px]">{detailError}</p>}
                 </div>
-              ) : activeTab === "overview" ? (
-                <div className="space-y-6">
+              ) : (
+                <>
+                  {detailError && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>{detailError}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "overview" ? (
+                    <div className="space-y-6">
                   {/* Category & Role Info */}
                   <div className="bg-white p-4 rounded-xl border border-slate-200">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
@@ -963,6 +983,8 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                     </div>
                   )}
                 </div>
+              )}
+                </>
               )}
             </div>
 
