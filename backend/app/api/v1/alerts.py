@@ -173,6 +173,27 @@ def seed_default_rules(db: Session):
     db.commit()
 
 # Outbound Dispatch Helper Functions
+def is_safe_webhook_endpoint(url: str) -> bool:
+    """Validate webhook URL against SSRF and cloud metadata access (CWE-918)."""
+    try:
+        from urllib.parse import urlparse
+        import ipaddress
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        host = (parsed.hostname or "").lower()
+        if host in ("localhost", "127.0.0.1", "::1", "169.254.169.254", "metadata.google.internal"):
+            return False
+        try:
+            ip = ipaddress.ip_address(host)
+            if ip.is_loopback or ip.is_link_local:
+                return False
+        except ValueError:
+            pass
+        return True
+    except Exception:
+        return False
+
 def dispatch_api_alert(
     message: str,
     target_id: str,
@@ -205,6 +226,9 @@ def dispatch_api_alert(
     if "api.gateway.com" in api_endpoint or "example.com" in api_endpoint:
         status = "SUCCESS"
         resp_text = f"HTTP 200 OK: Payload accepted by Gateway (Recipient: {target_id}, Sender: {from_sender})"
+    elif not is_safe_webhook_endpoint(api_endpoint):
+        status = "BLOCKED"
+        resp_text = "Blocked by SSRF protection guard: endpoint must be public HTTP/HTTPS without pointing to loopback or metadata services."
     else:
         try:
             with httpx.Client(timeout=3.0) as client:
