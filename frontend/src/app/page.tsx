@@ -558,6 +558,7 @@ export default function Home() {
         onClose={() => setTwoFactorModalOpen(false)}
         token={authToken || (typeof window !== "undefined" ? localStorage.getItem("phillip_token") || "" : "")}
         username={currentUser?.username || "admin"}
+        isAlreadyEnabled={Boolean(currentUser?.is_two_factor_enabled)}
         onSuccess={refreshUserProfile}
       />
     </div>

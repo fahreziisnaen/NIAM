@@ -65,5 +65,6 @@ class TwoFactorSetupResponse(BaseModel):
 
 class TwoFactorVerifyRequest(BaseModel):
     code: str
+    secret: Optional[str] = None
 
 Token.model_rebuild()

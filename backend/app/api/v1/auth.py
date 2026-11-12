@@ -79,8 +79,13 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
             )
         
         # Verify 2FA code
+        if not user.two_factor_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA secret configuration missing on user account. Please contact system administrator."
+            )
         totp = pyotp.TOTP(user.two_factor_secret)
-        if not totp.verify(login_data.two_factor_code.strip(), valid_window=1):
+        if not totp.verify(login_data.two_factor_code.strip(), valid_window=2):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid Google Authenticator code. Please check the 6-digit code on your app and try again."
@@ -357,9 +362,11 @@ def setup_two_factor(
     # Generate secret
     secret = pyotp.random_base32()
     
-    # Temporarily store secret on user record pending verification
-    current_user.two_factor_secret = secret
-    db.commit()
+    # IMPORTANT: Only store as pending secret if 2FA is NOT yet enabled.
+    # If 2FA is already active, NEVER overwrite the active secret until verified in /2fa/enable!
+    if not current_user.is_two_factor_enabled:
+        current_user.two_factor_secret = secret
+        db.commit()
 
     # Generate otpauth provisioning URI
     # Format: otpauth://totp/PSHK%20-%20NAMS:username?secret=...&issuer=PSHK%20-%20NAMS
@@ -404,17 +411,22 @@ def enable_two_factor(
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required")
     
-    if not current_user.two_factor_secret:
+    # Determine the secret to verify:
+    # 1. Prefer explicitly submitted secret from setup session (safe against overwrites)
+    # 2. Fall back to current_user.two_factor_secret (for first-time setup flow)
+    secret_to_verify = req.secret.strip() if req.secret and req.secret.strip() else current_user.two_factor_secret
+    if not secret_to_verify:
         raise HTTPException(status_code=400, detail="2FA setup has not been initiated. Please call /2fa/setup first.")
     
-    # Verify TOTP code
-    totp = pyotp.TOTP(current_user.two_factor_secret)
-    if not totp.verify(req.code.strip(), valid_window=1):
+    # Verify TOTP code with valid_window=2 (allows ±60s clock drift tolerance)
+    totp = pyotp.TOTP(secret_to_verify)
+    if not totp.verify(req.code.strip(), valid_window=2):
         raise HTTPException(
             status_code=400,
             detail="Invalid 6-digit verification code. Please ensure your device clock is synchronized and try again."
         )
 
+    current_user.two_factor_secret = secret_to_verify
     current_user.is_two_factor_enabled = True
     
     audit = AuditLog(
