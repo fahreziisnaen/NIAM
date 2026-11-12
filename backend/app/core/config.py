@@ -4,6 +4,7 @@ from typing import List
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Network Asset Management System"
+    TWO_FACTOR_ISSUER_NAME: str = os.getenv("TWO_FACTOR_ISSUER_NAME", "PSHK - NAMS")
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "phillip-securities-hk-super-secret-key-2026-production")
     ALGORITHM: str = "HS256"
