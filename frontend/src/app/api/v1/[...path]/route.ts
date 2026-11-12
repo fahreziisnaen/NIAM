@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function getBackendBaseUrl(): string {
   return process.env.INTERNAL_BACKEND_URL || "http://backend:8000";
 }
@@ -29,6 +32,7 @@ async function handleProxy(request: NextRequest, { params }: { params: { path: s
       headers: forwardHeaders,
       body: bodyBuffer,
       redirect: "manual",
+      cache: "no-store",
     });
 
     const responseHeaders = new Headers();

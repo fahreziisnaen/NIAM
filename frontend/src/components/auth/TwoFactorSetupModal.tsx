@@ -48,6 +48,7 @@ export function TwoFactorSetupModal({
     setErrorMessage(null);
     try {
       const res = await fetch(apiUrl("/api/v1/auth/2fa/setup"), {
+        cache: "no-store",
         headers: {
           Authorization: `Bearer ${token}`,
         },

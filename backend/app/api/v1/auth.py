@@ -364,6 +364,8 @@ def setup_two_factor(
     # Generate otpauth provisioning URI
     # Format: otpauth://totp/PSHK%20-%20NAMS:username?secret=...&issuer=PSHK%20-%20NAMS
     issuer_name = os.getenv("TWO_FACTOR_ISSUER_NAME", "PSHK - NAMS").strip()
+    if not issuer_name or issuer_name == "Phillip Securities Hong Kong":
+        issuer_name = "PSHK - NAMS"
     totp = pyotp.TOTP(secret)
     otpauth_url = totp.provisioning_uri(
         name=current_user.username,
