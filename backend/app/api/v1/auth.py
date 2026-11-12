@@ -362,11 +362,12 @@ def setup_two_factor(
     db.commit()
 
     # Generate otpauth provisioning URI
-    # Format: otpauth://totp/Phillip%20Securities%20Hong%20Kong:username?secret=...&issuer=Phillip%20Securities%20Hong%20Kong
+    # Format: otpauth://totp/Issuer:username?secret=...&issuer=Issuer
+    issuer_name = os.getenv("TWO_FACTOR_ISSUER_NAME", "Phillip Securities Hong Kong").strip()
     totp = pyotp.TOTP(secret)
     otpauth_url = totp.provisioning_uri(
         name=current_user.username,
-        issuer_name="Phillip Securities Hong Kong"
+        issuer_name=issuer_name
     )
 
     # Generate high quality QR code image in corporate navy & white

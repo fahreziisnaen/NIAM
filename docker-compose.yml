@@ -42,6 +42,7 @@ services:
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-Phillip2026!}
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@phillip.com.hk}
       INITIAL_ADMIN_FULL_NAME: ${INITIAL_ADMIN_FULL_NAME:-Administrator}
+      TWO_FACTOR_ISSUER_NAME: ${TWO_FACTOR_ISSUER_NAME:-Phillip Securities Hong Kong}
     ports:
       - "8000:8000"
     volumes:
