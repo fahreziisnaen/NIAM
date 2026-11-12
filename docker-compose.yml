@@ -38,6 +38,9 @@ services:
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
       APP_ENV: ${APP_ENV:-demo}
       SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-true}
+      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME:-admin}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-Phillip2026!}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@phillip.com.hk}
     ports:
       - "8000:8000"
     volumes:

@@ -57,8 +57,12 @@ def seed_database():
     db.flush()
 
     # 2. USERS (Username & Password login, Email optional)
+    admin_uname = os.getenv("INITIAL_ADMIN_USERNAME", "admin").strip()
+    admin_pwd = os.getenv("INITIAL_ADMIN_PASSWORD", "Phillip2026!").strip()
+    admin_email = os.getenv("INITIAL_ADMIN_EMAIL", "admin@phillip.com.hk").strip()
+
     users_data = [
-        ("admin", "admin@phillip.com.hk", "Phillip2026!", "Fahrezi Fauzan", "VP of Infrastructure & Security", "IT Infrastructure", True, "SUPER_ADMIN"),
+        (admin_uname, admin_email, admin_pwd, "Fahrezi Fauzan", "VP of Infrastructure & Security", "IT Infrastructure", True, "SUPER_ADMIN"),
         ("netadmin", "netadmin@phillip.com.hk", "Phillip2026!", "John Zhang", "Lead Network Architect", "Network Engineering", False, "NETWORK_ADMIN"),
         ("assetmgr", "assetmgr@phillip.com.hk", "Phillip2026!", "Kelvin Chan", "IT Asset & Procurement Lead", "IT Operations", False, "ASSET_MANAGER"),
         ("contractmgr", "contractmgr@phillip.com.hk", "Phillip2026!", "Grace Liu", "Senior Vendor & Contract Manager", "Finance & Vendor Management", False, "CONTRACT_MANAGER"),
