@@ -426,7 +426,7 @@ export function ContractsView({
           </div>
           <div>
             <span className="text-xs text-slate-500 font-medium">Total Contracts</span>
-            <div className="text-xl font-bold text-slate-900">{contracts.length || 32}</div>
+            <div className="text-xl font-bold text-slate-900">{contracts.length}</div>
           </div>
         </div>
 
@@ -443,7 +443,7 @@ export function ContractsView({
           <div>
             <span className="text-xs text-slate-500 font-medium">Active SLAs</span>
             <div className="text-xl font-bold text-slate-900">
-              {contracts.filter((c) => c.status === "Active").length || 24}
+              {contracts.filter((c) => c.status === "Active").length}
             </div>
           </div>
         </div>
@@ -461,7 +461,7 @@ export function ContractsView({
           <div>
             <span className="text-xs text-slate-500 font-medium">Expiring (≤ 90d)</span>
             <div className="text-xl font-bold text-amber-600">
-              {contracts.filter((c) => c.days_to_expiration <= 90).length || 8}
+              {contracts.filter((c) => c.days_to_expiration <= 90).length}
             </div>
           </div>
         </div>

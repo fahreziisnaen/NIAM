@@ -33,9 +33,10 @@ export function AssetsView({
   onDeleteAsset,
 }: AssetsViewProps) {
   const [assets, setAssets] = useState<DeviceItem[]>([]);
-  const [totalAssets, setTotalAssets] = useState(1248);
+  const [totalAssets, setTotalAssets] = useState(0);
+  const [stats, setStats] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -44,6 +45,13 @@ export function AssetsView({
   const [ownershipFilter, setOwnershipFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+
+  useEffect(() => {
+    fetch(apiUrl("/api/v1/dashboard/stats"))
+      .then((res) => res.json())
+      .then((data) => setStats(data))
+      .catch(() => {});
+  }, []);
 
   // Sync subCategory to filters
   useEffect(() => {
@@ -155,29 +163,31 @@ export function AssetsView({
       {/* SUB-VIEW 1: CATEGORIES OVERVIEW CARDS */}
       {subCategory === "categories" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-          {[
-            { name: "Switches", count: 524, pct: "42%", color: "bg-blue-500", desc: "Core spine-leaf & access switching" },
-            { name: "Routers", count: 275, pct: "22%", color: "bg-emerald-500", desc: "WAN aggregation & BGP gateways" },
-            { name: "Firewalls", count: 187, pct: "15%", color: "bg-amber-500", desc: "Perimeter NGFW & threat prevention" },
-            { name: "Wireless", count: 162, pct: "13%", color: "bg-purple-500", desc: "Enterprise Wi-Fi 6 APs & controllers" },
-            { name: "Others", count: 100, pct: "8%", color: "bg-slate-500", desc: "Terminal servers, ADCs & load balancers" },
-          ].map((cat) => (
-            <div
-              key={cat.name}
-              onClick={() => {
-                setCategoryFilter(cat.name.replace(/es$|s$/, ""));
-              }}
-              className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className={`w-3 h-3 rounded-full ${cat.color}`} />
-                <span className="text-xs font-bold text-slate-500">{cat.pct}</span>
+          {(stats?.asset_distribution && stats.asset_distribution.length > 0) ? (
+            stats.asset_distribution.map((cat: any) => (
+              <div
+                key={cat.name}
+                onClick={() => {
+                  setCategoryFilter(cat.name.replace(/es$|s$/, ""));
+                }}
+                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color || "#2563EB" }} />
+                  <span className="text-xs font-bold text-slate-500">{cat.percentage}%</span>
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 mt-2">{cat.name}</h3>
+                <div className="text-xl font-bold text-slate-900 mt-1">{cat.value}</div>
+                <p className="text-[11px] text-slate-400 mt-1">Hardware asset inventory</p>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mt-2">{cat.name}</h3>
-              <div className="text-xl font-bold text-slate-900 mt-1">{cat.count}</div>
-              <p className="text-[11px] text-slate-400 mt-1">{cat.desc}</p>
+            ))
+          ) : (
+            <div className="col-span-full bg-white p-8 rounded-xl border border-slate-200 text-center">
+              <Server className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-slate-700">No categorized assets recorded</p>
+              <p className="text-xs text-slate-400 mt-1">Add assets with category assignment to populate hardware analytics</p>
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -219,8 +229,8 @@ export function AssetsView({
             </div>
             <div>
               <span className="text-xs text-slate-500 font-medium">Company Owned Assets</span>
-              <div className="text-2xl font-bold text-slate-900">876</div>
-              <span className="text-[11px] text-slate-400">70.2% of inventory • Capitalized</span>
+              <div className="text-2xl font-bold text-slate-900">{stats?.company_owned ?? 0}</div>
+              <span className="text-[11px] text-slate-400">{stats?.company_owned_pct ?? 0}% of inventory • Capitalized</span>
             </div>
           </div>
 
@@ -230,8 +240,8 @@ export function AssetsView({
             </div>
             <div>
               <span className="text-xs text-slate-500 font-medium">Rental / Leased Units</span>
-              <div className="text-2xl font-bold text-amber-600">372</div>
-              <span className="text-[11px] text-slate-400">29.8% of inventory • HKT & Telco</span>
+              <div className="text-2xl font-bold text-amber-600">{stats?.rental_leased ?? 0}</div>
+              <span className="text-[11px] text-slate-400">{stats?.rental_leased_pct ?? 0}% of inventory • HKT & Telco</span>
             </div>
           </div>
 
@@ -241,8 +251,12 @@ export function AssetsView({
             </div>
             <div>
               <span className="text-xs text-slate-500 font-medium">Monthly Rental Commitment</span>
-              <div className="text-2xl font-bold text-slate-900">HKD 1,674,000</div>
-              <span className="text-[11px] text-emerald-600 font-medium">Average HKD 4,500 / month / unit</span>
+              <div className="text-2xl font-bold text-slate-900">
+                HKD {((stats?.rental_leased ?? 0) * 4500).toLocaleString()}
+              </div>
+              <span className="text-[11px] text-emerald-600 font-medium">
+                {(stats?.rental_leased ?? 0) > 0 ? "Average HKD 4,500 / month / unit" : "0 rental units active"}
+              </span>
             </div>
           </div>
         </div>

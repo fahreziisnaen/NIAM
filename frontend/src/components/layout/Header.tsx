@@ -67,7 +67,7 @@ export function Header({
 
   // Dynamic Notifications State
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState<number>(3);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 

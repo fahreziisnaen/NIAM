@@ -208,7 +208,9 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
           </div>
           <div>
             <span className="text-xs text-slate-500 font-medium">In Maintenance</span>
-            <div className="text-xl font-bold text-blue-600">6 devices</div>
+            <div className="text-xl font-bold text-blue-600">
+              {records.filter((r) => r.status === "In Progress" || r.status === "Open").length} devices
+            </div>
           </div>
         </div>
 
@@ -218,7 +220,9 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
           </div>
           <div>
             <span className="text-xs text-slate-500 font-medium">Scheduled PM</span>
-            <div className="text-xl font-bold text-slate-900">4 tickets</div>
+            <div className="text-xl font-bold text-slate-900">
+              {records.filter((r) => r.status === "Scheduled").length} tickets
+            </div>
           </div>
         </div>
 
@@ -227,8 +231,10 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs text-slate-500 font-medium">Completed (YTD)</span>
-            <div className="text-xl font-bold text-slate-900">48 tickets</div>
+            <span className="text-xs text-slate-500 font-medium">Completed</span>
+            <div className="text-xl font-bold text-slate-900">
+              {records.filter((r) => r.status === "Completed").length} tickets
+            </div>
           </div>
         </div>
 
@@ -238,7 +244,9 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
           </div>
           <div>
             <span className="text-xs text-slate-500 font-medium">Total Cost</span>
-            <div className="text-xl font-bold text-slate-900">HKD 184,200</div>
+            <div className="text-xl font-bold text-slate-900">
+              HKD {records.reduce((acc, r) => acc + (Number(r.cost) || 0), 0).toLocaleString()}
+            </div>
           </div>
         </div>
       </div>

@@ -60,7 +60,7 @@ export function DeviceInventoryTable({
   isLoading = false,
 }: DeviceInventoryTableProps) {
   const displayAssets = devices || assets || [];
-  const displayTotal = totalCount ?? totalAssets ?? 1248;
+  const displayTotal = totalCount ?? totalAssets ?? 0;
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,8 +68,9 @@ export function DeviceInventoryTable({
     onSearch(e.target.value);
   };
 
-  const startIdx = (currentPage - 1) * pageSize + 1;
+  const startIdx = displayTotal === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(currentPage * pageSize, displayTotal);
+  const totalPages = Math.max(1, Math.ceil(displayTotal / pageSize));
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
@@ -285,7 +286,7 @@ export function DeviceInventoryTable({
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
 
-          {[1, 2, 3, 4, 5].map((pageNum) => (
+          {Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 5).map((pageNum) => (
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}

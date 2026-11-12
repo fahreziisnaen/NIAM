@@ -29,13 +29,12 @@ export function ContractTimelineChart({
   timelineData,
   onViewCalendar,
 }: ContractTimelineChartProps) {
-  const chartData = timelineData || data || [
-    { month: "Nov", contracts: 8, warranties: 6 },
-    { month: "Dec", contracts: 9, warranties: 7 },
-    { month: "Jan", contracts: 12, warranties: 10 },
-    { month: "Feb", contracts: 9, warranties: 7 },
-    { month: "Mar", contracts: 7, warranties: 5 },
-  ];
+  const chartData = (timelineData && timelineData.length > 0)
+    ? timelineData
+    : (data && data.length > 0)
+    ? data
+    : [];
+
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between h-[280px]">
       {/* Header */}
@@ -68,51 +67,58 @@ export function ContractTimelineChart({
       </div>
 
       {/* Line Chart */}
-      <div className="w-full h-44 mt-1">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 11, fill: "#64748b" }}
-            />
-            <YAxis
-              domain={[0, 15]}
-              ticks={[0, 5, 10, 15]}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 11, fill: "#64748b" }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                borderRadius: "8px",
-                fontSize: "12px",
-                border: "1px solid #e2e8f0",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="contracts"
-              stroke="#2563EB"
-              strokeWidth={2}
-              dot={{ r: 4, fill: "#2563EB" }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="warranties"
-              stroke="#10B981"
-              strokeWidth={2}
-              dot={{ r: 4, fill: "#10B981" }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {chartData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-44 text-center">
+          <p className="text-xs text-slate-500 font-medium">No contract timeline data</p>
+          <p className="text-[11px] text-slate-400 mt-1">Contracts and warranties will appear here as they are added</p>
+        </div>
+      ) : (
+        <div className="w-full h-44 mt-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 11, fill: "#64748b" }}
+              />
+              <YAxis
+                domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]}
+                allowDecimals={false}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 11, fill: "#64748b" }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#ffffff",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="contracts"
+                stroke="#2563EB"
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#2563EB" }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="warranties"
+                stroke="#10B981"
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#10B981" }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }

@@ -30,9 +30,9 @@ export function AttentionRequiredCard({
   onWarrantiesClick,
   onMaintenanceClick,
 }: AttentionRequiredProps) {
-  const actualContracts = contractsExpiring ?? contractsExpiring90d ?? 8;
-  const actualWarranties = warrantiesExpiring ?? warrantiesExpiring90d ?? 14;
-  const actualMaintenance = devicesUnderMaintenance ?? devicesInMaintenance ?? 6;
+  const actualContracts = contractsExpiring ?? contractsExpiring90d ?? 0;
+  const actualWarranties = warrantiesExpiring ?? warrantiesExpiring90d ?? 0;
+  const actualMaintenance = devicesUnderMaintenance ?? devicesInMaintenance ?? 0;
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between h-[280px]">
       {/* Header */}

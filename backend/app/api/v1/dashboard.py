@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional, List
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+import calendar
 from app.db.session import get_db
 from app.models.asset import Asset, DeviceCategory
 from app.models.contract import Contract, Warranty
@@ -119,14 +120,30 @@ def get_dashboard_statistics(
         )
     ]
 
-    # Contract timeline matching graph
-    timeline = [
-        TimelinePoint(month="Nov", contracts=8, warranties=6),
-        TimelinePoint(month="Dec", contracts=9, warranties=7),
-        TimelinePoint(month="Jan", contracts=12, warranties=10),
-        TimelinePoint(month="Feb", contracts=9, warranties=7),
-        TimelinePoint(month="Mar", contracts=7, warranties=5),
-    ]
+    # Dynamic contract & warranty timeline for current + next 4 months
+    timeline: List[TimelinePoint] = []
+    for i in range(5):
+        y = today.year + (today.month + i - 1) // 12
+        m = (today.month + i - 1) % 12 + 1
+        m_name = calendar.month_abbr[m]
+        f_day = date(y, m, 1)
+        l_day = date(y, m, calendar.monthrange(y, m)[1])
+
+        c_cnt = db.query(Contract).filter(
+            Contract.end_date >= f_day,
+            Contract.end_date <= l_day
+        ).count()
+
+        w_cnt = db.query(Warranty).filter(
+            Warranty.end_date >= f_day,
+            Warranty.end_date <= l_day
+        ).count()
+
+        timeline.append(TimelinePoint(
+            month=m_name,
+            contracts=c_cnt,
+            warranties=w_cnt
+        ))
 
     return DashboardStats(
         total_assets=total_assets,
@@ -142,8 +159,11 @@ def get_dashboard_statistics(
         devices_in_maintenance=maintenance_count,
         contracts_expiring_90d=contracts_expiring_soon,
         warranties_expiring_90d=warranties_expiring_90d,
-        last_updated="07 Nov 2025, 14:32",
+        warranties_expiring_soon=warranties_expiring_90d,
+        devices_under_maintenance=maintenance_count,
+        last_updated=datetime.now().strftime("%d %b %Y, %H:%M"),
         asset_distribution=distribution_list,
+        device_distribution=distribution_list,
         attention_required=attention_list,
         contract_timeline=timeline
     )

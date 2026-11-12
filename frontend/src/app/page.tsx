@@ -51,12 +51,12 @@ export default function Home() {
 
   // Dashboard Stats State
   const [dashboardStats, setDashboardStats] = useState<any>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>("07 Nov 2025, 14:32");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Table State
   const [assets, setAssets] = useState<DeviceItem[]>([]);
-  const [totalAssets, setTotalAssets] = useState(1248);
+  const [totalAssets, setTotalAssets] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(6);
   const [tableSearch, setTableSearch] = useState("");
@@ -318,11 +318,13 @@ export default function Home() {
 
               {/* 4 KPI Cards */}
               <KPICards
-                totalAssets={dashboardStats?.total_assets ?? 1248}
-                companyOwned={dashboardStats?.company_owned ?? 876}
-                rentalLeased={dashboardStats?.rental_leased ?? 372}
-                activeContracts={dashboardStats?.active_contracts ?? 32}
-                contractsExpiringSoon={dashboardStats?.contracts_expiring_soon ?? 8}
+                totalAssets={dashboardStats?.total_assets ?? 0}
+                companyOwned={dashboardStats?.company_owned ?? 0}
+                companyOwnedPct={dashboardStats?.company_owned_pct}
+                rentalLeased={dashboardStats?.rental_leased ?? 0}
+                rentalLeasedPct={dashboardStats?.rental_leased_pct}
+                activeContracts={dashboardStats?.active_contracts ?? 0}
+                contractsExpiringSoon={dashboardStats?.contracts_expiring_soon ?? 0}
                 onCardClick={(type) => {
                   if (type === "contracts") setCurrentTab("contracts");
                   else {
@@ -337,8 +339,8 @@ export default function Home() {
               {/* Middle Row: 3 Visual Analysis Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <AssetDistributionChart
-                  totalAssets={dashboardStats?.total_assets ?? 1248}
-                  distribution={dashboardStats?.device_distribution}
+                  totalAssets={dashboardStats?.total_assets ?? 0}
+                  distribution={dashboardStats?.asset_distribution || dashboardStats?.device_distribution}
                   onCategoryClick={(category) => {
                     setCurrentTab("assets");
                     const catMap: Record<string, string> = {
@@ -353,9 +355,9 @@ export default function Home() {
                 />
 
                 <AttentionRequiredCard
-                  contractsExpiring={dashboardStats?.contracts_expiring_soon ?? 8}
-                  warrantiesExpiring={dashboardStats?.warranties_expiring_soon ?? 14}
-                  devicesUnderMaintenance={dashboardStats?.devices_under_maintenance ?? 6}
+                  contractsExpiring={dashboardStats?.contracts_expiring_soon ?? 0}
+                  warrantiesExpiring={dashboardStats?.warranties_expiring_90d ?? dashboardStats?.warranties_expiring_soon ?? 0}
+                  devicesUnderMaintenance={dashboardStats?.devices_in_maintenance ?? dashboardStats?.devices_under_maintenance ?? 0}
                   onViewAll={() => {
                     setCurrentTab("contracts");
                     setSubCategory("all");
@@ -417,10 +419,10 @@ export default function Home() {
                   />
 
                   <KeyInformationCard
-                    activeContracts={dashboardStats?.active_contracts ?? 32}
-                    expiringSoon={dashboardStats?.contracts_expiring_soon ?? 8}
-                    totalVendors={dashboardStats?.total_vendors ?? 14}
-                    totalSites={dashboardStats?.total_locations ?? 6}
+                    activeContracts={dashboardStats?.active_contracts ?? 0}
+                    expiringSoon={dashboardStats?.contracts_expiring_soon ?? 0}
+                    totalVendors={dashboardStats?.total_vendors ?? 0}
+                    totalSites={dashboardStats?.total_locations ?? 0}
                     onNavigate={(tab, sub) => {
                       setCurrentTab(tab as NavItem);
                       if (sub) setSubCategory(sub);

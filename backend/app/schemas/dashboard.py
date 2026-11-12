@@ -42,8 +42,11 @@ class DashboardStats(BaseModel):
     devices_in_maintenance: int
     contracts_expiring_90d: int
     warranties_expiring_90d: int
+    warranties_expiring_soon: Optional[int] = 0
+    devices_under_maintenance: Optional[int] = 0
     last_updated: str
     asset_distribution: List[DistributionSlice]
+    device_distribution: Optional[List[DistributionSlice]] = None
     attention_required: List[AttentionItem]
     contract_timeline: List[TimelinePoint]
 

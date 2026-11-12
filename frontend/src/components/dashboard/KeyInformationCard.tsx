@@ -13,10 +13,10 @@ interface KeyInformationProps {
 }
 
 export function KeyInformationCard({
-  activeContracts = 32,
-  expiringSoon = 8,
-  totalVendors = 14,
-  totalSites = 6,
+  activeContracts = 0,
+  expiringSoon = 0,
+  totalVendors = 0,
+  totalSites = 0,
   onNavigate,
 }: KeyInformationProps) {
   return (

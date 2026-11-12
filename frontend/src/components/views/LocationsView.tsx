@@ -1918,13 +1918,13 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                     <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Buildings</span>
                       <span className="text-xl font-bold text-slate-900 mt-1 block">
-                        {selectedSiteDetail.building_count || 1}
+                        {selectedSiteDetail.building_count ?? selectedSiteDetail.buildings?.length ?? 0}
                       </span>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Floors</span>
                       <span className="text-xl font-bold text-slate-900 mt-1 block">
-                        {selectedSiteDetail.floor_count || 1}
+                        {selectedSiteDetail.floor_count ?? 0}
                       </span>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl">

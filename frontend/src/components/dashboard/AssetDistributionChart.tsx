@@ -21,16 +21,19 @@ interface AssetDistributionChartProps {
 export function AssetDistributionChart({
   data,
   distribution,
-  totalAssets = 1248,
+  totalAssets = 0,
   onCategoryClick,
 }: AssetDistributionChartProps) {
-  const chartData = distribution || data || [
-    { name: "Switches", value: 524, percentage: 42, color: "#2563EB" },
-    { name: "Routers", value: 275, percentage: 22, color: "#10B981" },
-    { name: "Firewalls", value: 187, percentage: 15, color: "#F59E0B" },
-    { name: "Wireless", value: 162, percentage: 13, color: "#8B5CF6" },
-    { name: "Others", value: 100, percentage: 8, color: "#64748B" },
-  ];
+  const chartData = (distribution && distribution.length > 0)
+    ? distribution
+    : (data && data.length > 0)
+    ? data
+    : [];
+
+  const displaySlices = chartData.length > 0
+    ? chartData
+    : [{ name: "No Assets", value: 1, color: "#f1f5f9", percentage: 0 }];
+
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between h-[280px]">
       {/* Card Header */}
@@ -47,27 +50,29 @@ export function AssetDistributionChart({
         <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Tooltip
-                formatter={(val: any, name: any) => [`${val} devices`, name]}
-                contentStyle={{
-                  backgroundColor: "#ffffff",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                }}
-              />
+              {chartData.length > 0 && (
+                <Tooltip
+                  formatter={(val: any, name: any) => [`${val} devices`, name]}
+                  contentStyle={{
+                    backgroundColor: "#ffffff",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                  }}
+                />
+              )}
               <Pie
-                data={chartData}
+                data={displaySlices}
                 cx="50%"
                 cy="50%"
                 innerRadius={52}
                 outerRadius={74}
-                paddingAngle={2}
+                paddingAngle={chartData.length > 0 ? 2 : 0}
                 dataKey="value"
                 strokeWidth={0}
               >
-                {chartData.map((entry, index) => (
+                {displaySlices.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -86,25 +91,34 @@ export function AssetDistributionChart({
 
         {/* Legend on Right */}
         <div className="flex-1 pl-4 space-y-2">
-          {chartData.map((item) => (
-            <div
-              key={item.name}
-              onClick={() => onCategoryClick && onCategoryClick(item.name)}
-              className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 px-1.5 py-1 rounded-lg transition-colors group"
-              title={`View ${item.name} in Asset Inventory`}
-            >
-              <div className="flex items-center space-x-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 group-hover:scale-125 transition-transform"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-slate-600 font-medium group-hover:text-blue-700 transition-colors">
-                  {item.name}
-                </span>
+          {chartData.length > 0 ? (
+            chartData.map((item) => (
+              <div
+                key={item.name}
+                onClick={() => onCategoryClick && onCategoryClick(item.name)}
+                className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 px-1.5 py-1 rounded-lg transition-colors group"
+                title={`View ${item.name} in Asset Inventory`}
+              >
+                <div className="flex items-center space-x-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 group-hover:scale-125 transition-transform"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-slate-600 font-medium group-hover:text-blue-700 transition-colors">
+                    {item.name}
+                  </span>
+                </div>
+                <span className="font-bold text-slate-900 group-hover:text-blue-700">{item.percentage}%</span>
               </div>
-              <span className="font-bold text-slate-900 group-hover:text-blue-700">{item.percentage}%</span>
+            ))
+          ) : (
+            <div className="text-left py-2">
+              <p className="text-xs font-semibold text-slate-600">No assets recorded</p>
+              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                Add devices to track hardware category distribution
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

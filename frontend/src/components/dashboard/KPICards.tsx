@@ -15,15 +15,18 @@ interface KPICardsProps {
 }
 
 export function KPICards({
-  totalAssets = 1248,
-  companyOwned = 876,
-  companyOwnedPct = 70.2,
-  rentalLeased = 372,
-  rentalLeasedPct = 29.8,
-  activeContracts = 32,
-  contractsExpiringSoon = 8,
+  totalAssets = 0,
+  companyOwned = 0,
+  companyOwnedPct,
+  rentalLeased = 0,
+  rentalLeasedPct,
+  activeContracts = 0,
+  contractsExpiringSoon = 0,
   onCardClick,
 }: KPICardsProps) {
+  const compPct = companyOwnedPct ?? (totalAssets > 0 ? Number(((companyOwned / totalAssets) * 100).toFixed(1)) : 0);
+  const rentPct = rentalLeasedPct ?? (totalAssets > 0 ? Number(((rentalLeased / totalAssets) * 100).toFixed(1)) : 0);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {/* 1. Total Assets */}
@@ -39,8 +42,12 @@ export function KPICards({
           <div className="text-2xl font-bold text-slate-900 tracking-tight leading-tight mt-0.5">
             {totalAssets.toLocaleString()}
           </div>
-          <div className="flex items-center text-[11px] font-semibold text-emerald-600 mt-1">
-            <span>↑ +2% vs last month</span>
+          <div className="flex items-center text-[11px] font-semibold mt-1">
+            {totalAssets > 0 ? (
+              <span className="text-emerald-600">Active estate</span>
+            ) : (
+              <span className="text-slate-400 font-normal">No assets recorded</span>
+            )}
           </div>
         </div>
       </div>
@@ -59,7 +66,7 @@ export function KPICards({
             {companyOwned.toLocaleString()}
           </div>
           <div className="text-[11px] font-medium text-slate-500 mt-1">
-            {companyOwnedPct}% of inventory
+            {compPct}% of inventory
           </div>
         </div>
       </div>
@@ -78,7 +85,7 @@ export function KPICards({
             {rentalLeased.toLocaleString()}
           </div>
           <div className="text-[11px] font-medium text-slate-500 mt-1">
-            {rentalLeasedPct}% of inventory
+            {rentPct}% of inventory
           </div>
         </div>
       </div>
