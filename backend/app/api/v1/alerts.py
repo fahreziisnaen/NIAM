@@ -60,17 +60,17 @@ def get_or_create_alert_settings(db: Session) -> AlertSetting:
     setting = db.query(AlertSetting).first()
     if not setting:
         setting = AlertSetting(
-            api_endpoint="https://api.gateway.com/send",
-            api_key="API_KEY_ANDA",
-            target_id="628123456789",
-            from_sender="respon",
-            api_enabled=True,
-            email_recipients="noc@phillip.com.hk, infrastructure-team@phillip.com.hk",
-            smtp_host="smtp.phillip.com.hk",
+            api_endpoint="",
+            api_key="",
+            target_id="",
+            from_sender="",
+            api_enabled=False,
+            email_recipients="",
+            smtp_host="",
             smtp_port=587,
-            smtp_user="noc-alerts@phillip.com.hk",
-            smtp_from="noc-alerts@phillip.com.hk",
-            email_enabled=True,
+            smtp_user="",
+            smtp_from="",
+            email_enabled=False,
         )
         db.add(setting)
         db.commit()
@@ -216,7 +216,7 @@ def dispatch_api_alert(
     api_headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "User-Agent": "PhillipSecurities-AlertAutomation/1.0",
+        "User-Agent": "AssetManagement-AlertAutomation/1.0",
     }
 
     status = "SUCCESS"
@@ -350,11 +350,11 @@ def execute_alert_evaluation(db: Session, force_dispatch: bool = True) -> Dict[s
         rule.last_evaluated_at = now
 
         # Target parameters
-        target_id = rule.custom_target_id or settings.target_id or "628123456789"
-        from_sender = rule.custom_from_sender or settings.from_sender or "respon"
-        email_recipients = rule.custom_email or settings.email_recipients or "noc@phillip.com.hk"
-        api_endpoint = settings.api_endpoint or "https://api.gateway.com/send"
-        api_key = settings.api_key or "API_KEY_ANDA"
+        target_id = rule.custom_target_id or settings.target_id or ""
+        from_sender = rule.custom_from_sender or settings.from_sender or ""
+        email_recipients = rule.custom_email or settings.email_recipients or ""
+        api_endpoint = settings.api_endpoint or ""
+        api_key = settings.api_key or ""
         channels = [c.strip().lower() for c in (rule.channels or "api,email").split(",")]
 
         # 1. CONTRACT_EXPIRATION
@@ -814,9 +814,9 @@ def test_alert_rule(rule_id: int, req: TestRuleRequest, db: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Alert rule not found")
     
     settings = get_or_create_alert_settings(db)
-    target_id = req.target_id or rule.custom_target_id or settings.target_id or "628123456789"
-    from_sender = req.from_sender or rule.custom_from_sender or settings.from_sender or "respon"
-    email_to = req.email_to or rule.custom_email or settings.email_recipients or "noc@phillip.com.hk"
+    target_id = req.target_id or rule.custom_target_id or settings.target_id or ""
+    from_sender = req.from_sender or rule.custom_from_sender or settings.from_sender or ""
+    email_to = req.email_to or rule.custom_email or settings.email_recipients or ""
     
     msg = (
         req.custom_message or 
@@ -833,8 +833,8 @@ def test_alert_rule(rule_id: int, req: TestRuleRequest, db: Session = Depends(ge
             message=msg,
             target_id=target_id,
             from_sender=from_sender,
-            api_endpoint=settings.api_endpoint or "https://api.gateway.com/send",
-            api_key=settings.api_key or "API_KEY_ANDA",
+            api_endpoint=settings.api_endpoint or "",
+            api_key=settings.api_key or "",
             db=db,
             rule_id=rule.id,
             rule_name=rule.name,

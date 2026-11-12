@@ -83,23 +83,21 @@ class Notification(Base):
 class AlertSetting(Base):
     __tablename__ = "alert_settings"
     id = Column(Integer, primary_key=True, index=True)
-    # API Webhook Settings (as requested by user)
-    # Header: Bearer API_KEY_ANDA
-    # Body: {"id": "628123456789", "message": "...", "from": "respon"}
-    api_endpoint = Column(String(500), default="https://api.gateway.com/send")
-    api_key = Column(String(500), default="API_KEY_ANDA")
-    target_id = Column(String(100), default="628123456789")
-    from_sender = Column(String(100), default="respon")
-    api_enabled = Column(Boolean, default=True)
+    # API Webhook Settings
+    api_endpoint = Column(String(500), default="", nullable=True)
+    api_key = Column(String(500), default="", nullable=True)
+    target_id = Column(String(100), default="", nullable=True)
+    from_sender = Column(String(100), default="", nullable=True)
+    api_enabled = Column(Boolean, default=False)
 
     # Email Settings
-    email_recipients = Column(String(500), default="noc@phillip.com.hk")
-    smtp_host = Column(String(255), default="smtp.phillip.com.hk")
+    email_recipients = Column(String(500), default="", nullable=True)
+    smtp_host = Column(String(255), default="", nullable=True)
     smtp_port = Column(Integer, default=587)
-    smtp_user = Column(String(255), default="noc-alerts@phillip.com.hk")
+    smtp_user = Column(String(255), default="", nullable=True)
     smtp_password = Column(String(255), nullable=True)
-    smtp_from = Column(String(255), default="noc-alerts@phillip.com.hk")
-    email_enabled = Column(Boolean, default=True)
+    smtp_from = Column(String(255), default="", nullable=True)
+    email_enabled = Column(Boolean, default=False)
 
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 

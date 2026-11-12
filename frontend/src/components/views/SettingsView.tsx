@@ -60,13 +60,13 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
   const [editSubmitting, setEditSubmitting] = useState(false);
 
   // Alert & Notification Gateway Configuration State
-  const [gatewayApiEndpoint, setGatewayApiEndpoint] = useState("https://api.gateway.com/send");
-  const [gatewayApiKey, setGatewayApiKey] = useState("API_KEY_ANDA");
-  const [gatewayTargetId, setGatewayTargetId] = useState("628123456789");
-  const [gatewayFromSender, setGatewayFromSender] = useState("respon");
-  const [gatewayApiEnabled, setGatewayApiEnabled] = useState(true);
-  const [gatewayEmailRecipients, setGatewayEmailRecipients] = useState("noc@phillip.com.hk, infrastructure-team@phillip.com.hk");
-  const [gatewayEmailEnabled, setGatewayEmailEnabled] = useState(true);
+  const [gatewayApiEndpoint, setGatewayApiEndpoint] = useState("");
+  const [gatewayApiKey, setGatewayApiKey] = useState("");
+  const [gatewayTargetId, setGatewayTargetId] = useState("");
+  const [gatewayFromSender, setGatewayFromSender] = useState("");
+  const [gatewayApiEnabled, setGatewayApiEnabled] = useState(false);
+  const [gatewayEmailRecipients, setGatewayEmailRecipients] = useState("");
+  const [gatewayEmailEnabled, setGatewayEmailEnabled] = useState(false);
   const [gatewaySaving, setGatewaySaving] = useState(false);
   const [gatewaySaveMsg, setGatewaySaveMsg] = useState<string | null>(null);
 
@@ -973,7 +973,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       type="text"
                       value={gatewayApiEndpoint}
                       onChange={(e) => setGatewayApiEndpoint(e.target.value)}
-                      placeholder="https://api.gateway.com/send"
+                      placeholder="https://api.your-gateway.com/send"
                       className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs"
                       required
                     />
@@ -1002,7 +1002,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                         type="text"
                         value={gatewayTargetId}
                         onChange={(e) => setGatewayTargetId(e.target.value)}
-                        placeholder="628123456789"
+                        placeholder="e.g. 628xxxxxxxx"
                         className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs"
                         required
                       />
@@ -1242,7 +1242,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Raymond Wong"
+                  placeholder="e.g. John Doe"
                   className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                   required
                 />
@@ -1345,7 +1345,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                   required
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  placeholder="e.g. Fahrezi Fauzan"
+                  placeholder="e.g. Administrator"
                   className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                 />
               </div>

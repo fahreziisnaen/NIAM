@@ -107,7 +107,7 @@ def generate_report_data(report_id: str, db: Session, site_id: Optional[int], ve
     elif report_id == "rental_report":
         headers = ["Asset ID", "Hostname", "Model", "Provider", "Agreement Ref", "Rental Start", "Rental End", "Monthly Cost (HKD)", "Location"]
         q = db.query(Asset).filter(Asset.ownership_type.in_(["Rental", "Leased"]), Asset.is_deleted == False)
-        rows = [[a.asset_id, a.hostname, a.model.model_name if a.model else "", a.rental_provider or "HKT", a.rental_agreement_ref or "RA-2024", str(a.rental_start_date or ""), str(a.rental_end_date or ""), float(a.monthly_rental_cost or 0), a.location_display or ""] for a in q.limit(limit).all()]
+        rows = [[a.asset_id, a.hostname, a.model.model_name if a.model else "", a.rental_provider or "", a.rental_agreement_ref or "", str(a.rental_start_date or ""), str(a.rental_end_date or ""), float(a.monthly_rental_cost or 0), a.location_display or ""] for a in q.limit(limit).all()]
         return headers, rows
 
     elif report_id == "ownership_report":
@@ -156,7 +156,7 @@ def generate_report_data(report_id: str, db: Session, site_id: Optional[int], ve
     elif report_id == "eol_eos_report":
         headers = ["Asset ID", "Hostname", "Model", "Manufacturer", "EOL Date", "EOS Date", "Recommended Replacement"]
         q = db.query(Asset).filter(Asset.is_deleted == False)
-        rows = [[a.asset_id, a.hostname, a.model.model_name if a.model else "", a.manufacturer, str(a.end_of_life_date or "2029-12-31"), str(a.end_of_support_date or "2031-12-31"), "Next-Gen Enterprise Chassis"] for a in q.limit(limit).all()]
+        rows = [[a.asset_id, a.hostname, a.model.model_name if a.model else "", a.manufacturer, str(a.end_of_life_date or ""), str(a.end_of_support_date or ""), ""] for a in q.limit(limit).all()]
         return headers, rows
 
     elif report_id == "maintenance_history":

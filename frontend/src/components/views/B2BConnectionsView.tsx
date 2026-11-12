@@ -982,7 +982,7 @@ export function B2BConnectionsView() {
                     type="text"
                     value={formContactPerson}
                     onChange={(e) => setFormContactPerson(e.target.value)}
-                    placeholder="e.g. Kelvin Chan (Connectivity Desk)"
+                    placeholder="e.g. Network Operations Lead"
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-slate-800"
                   />
                 </div>

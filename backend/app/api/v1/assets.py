@@ -160,6 +160,20 @@ def list_assets(
         total_pages=total_pages
     )
 
+@router.get("/models")
+def get_hardware_models(db: Session = Depends(get_db)):
+    models = db.query(DeviceModel).all()
+    return [{
+        "id": m.id,
+        "model": m.model_name,
+        "mfg": m.manufacturer,
+        "category": m.category.name if m.category else "",
+        "ports": m.total_ports,
+        "u": m.rack_units,
+        "eol": str(m.end_of_life_date or ""),
+        "desc": m.description or ""
+    } for m in models]
+
 @router.get("/{asset_id_or_number}", response_model=AssetDetailOut)
 def get_asset_detail(asset_id_or_number: str, db: Session = Depends(get_db)):
     # Support lookup by numerical primary key or NA-XXXXXX
@@ -220,14 +234,6 @@ def get_asset_detail(asset_id_or_number: str, db: Session = Depends(get_db)):
             "uplink_target": iface.uplink_target,
             "uplink_port": iface.uplink_port
         })
-    # If no interfaces populated, provide standard default interface set
-    if not interfaces_data:
-        interfaces_data = [
-            {"id": 1, "name": "Management0", "mac_address": asset.mac_address, "ip_address": asset.management_ip, "speed": "1 Gbps", "duplex": "Full", "status": "Up", "uplink_target": "OOB-SW-01", "uplink_port": "Port 12"},
-            {"id": 2, "name": "TenGigabitEthernet1/0/1", "mac_address": asset.mac_address, "ip_address": "10.200.10.1", "speed": "10 Gbps", "duplex": "Full", "status": "Up", "uplink_target": "SW-01-HK", "uplink_port": "Te1/0/48"},
-            {"id": 3, "name": "TenGigabitEthernet1/0/2", "mac_address": None, "ip_address": None, "speed": "10 Gbps", "duplex": "Full", "status": "Up", "uplink_target": "SW-02-HK", "uplink_port": "Te1/0/48"},
-            {"id": 4, "name": "GigabitEthernet1/0/3", "mac_address": None, "ip_address": None, "speed": "1 Gbps", "duplex": "Auto", "status": "Down", "uplink_target": None, "uplink_port": None}
-        ]
 
     # TAB 4: Network Relationships (Topology)
     topology_neighbors = []
@@ -277,12 +283,6 @@ def get_asset_detail(asset_id_or_number: str, db: Session = Depends(get_db)):
             "uploaded_by": doc.uploaded_by,
             "created_at": str(doc.created_at)
         })
-    if not documents_data:
-        documents_data = [
-            {"id": 101, "document_type": "Datasheet", "file_name": f"{asset.manufacturer}_{asset.model.model_name if asset.model else 'Hardware'}_Datasheet.pdf", "file_size_kb": 1420, "uploaded_by": "System Admin", "created_at": "2024-01-15"},
-            {"id": 102, "document_type": "Configuration Backup", "file_name": f"{asset.hostname}_running_config_latest.cfg", "file_size_kb": 85, "uploaded_by": "Network Automation Engine", "created_at": "2025-11-01"},
-            {"id": 103, "document_type": "Warranty Certificate", "file_name": f"Warranty_Cert_{asset.serial_number}.pdf", "file_size_kb": 430, "uploaded_by": "Finance & Procurement", "created_at": "2023-11-10"}
-        ]
 
     # TAB 7: Audit History
     audit_data = []
@@ -296,12 +296,6 @@ def get_asset_detail(asset_id_or_number: str, db: Session = Depends(get_db)):
             "changed_by": h.changed_by,
             "created_at": str(h.created_at)
         })
-    if not audit_data:
-        audit_data = [
-            {"id": 201, "action": "INITIAL_COMMISSION", "field_name": "operational_status", "old_value": "In Stock", "new_value": "Deployed", "changed_by": "Raymond Wong (Lead Network Architect)", "created_at": "2024-02-14 10:22:00"},
-            {"id": 202, "action": "FIRMWARE_UPGRADE", "field_name": "firmware_version", "old_value": "17.6.3", "new_value": asset.firmware_version, "changed_by": "Automated Deployment Pipeline", "created_at": "2024-08-20 03:15:00"},
-            {"id": 203, "action": "MAINTENANCE_LOG", "field_name": "asset_condition", "old_value": "Routine", "new_value": "Good", "changed_by": "Kelvin Chan (Asset Manager)", "created_at": "2025-05-11 16:40:00"}
-        ]
 
     res = AssetDetailOut(
         id=asset.id,

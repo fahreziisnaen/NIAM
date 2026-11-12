@@ -35,12 +35,13 @@ services:
       SECRET_KEY: ${SECRET_KEY:-phillip-securities-hk-super-secret-key-2026-production}
       API_V1_STR: /api/v1
       UPLOAD_DIR: /app/uploads
-      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
-      APP_ENV: ${APP_ENV:-demo}
-      SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-true}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      APP_ENV: ${APP_ENV:-production}
+      SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-false}
       INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME:-admin}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-Phillip2026!}
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@phillip.com.hk}
+      INITIAL_ADMIN_FULL_NAME: ${INITIAL_ADMIN_FULL_NAME:-Administrator}
     ports:
       - "8000:8000"
     volumes:
@@ -57,7 +58,7 @@ services:
       - backend
     environment:
       INTERNAL_BACKEND_URL: http://backend:8000
-      NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-true}
+      NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-false}
       NODE_ENV: production
       PORT: 3000
     ports:

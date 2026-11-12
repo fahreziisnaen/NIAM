@@ -47,11 +47,11 @@ export function SparesView() {
   const [newPartNumber, setNewPartNumber] = useState("");
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("Optics");
-  const [newQuantity, setNewQuantity] = useState(10);
-  const [newMinLevel, setNewMinLevel] = useState(4);
-  const [newUnitCost, setNewUnitCost] = useState(1200);
-  const [newLocation, setNewLocation] = useState("HK-DC1 Spares Locker (Rack A0)");
-  const [newCompatibility, setNewCompatibility] = useState("Cisco Catalyst 9300 / Nexus 9300");
+  const [newQuantity, setNewQuantity] = useState(0);
+  const [newMinLevel, setNewMinLevel] = useState(0);
+  const [newUnitCost, setNewUnitCost] = useState(0);
+  const [newLocation, setNewLocation] = useState("");
+  const [newCompatibility, setNewCompatibility] = useState("");
   const [newNotes, setNewNotes] = useState("");
 
   // Edit Spare Part Modal State
@@ -487,7 +487,7 @@ export function SparesView() {
                   <div className="sm:col-span-2">
                     <span className="text-slate-400 block text-[11px]">Compatible Hardware Platforms:</span>
                     <span className="font-mono text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 block mt-1">
-                      {detailPart.compatibility || "Standard Enterprise SFP+ / QSFP28 Modules"}
+                      {detailPart.compatibility || "—"}
                     </span>
                   </div>
                 </div>

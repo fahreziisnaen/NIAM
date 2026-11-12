@@ -22,24 +22,19 @@ def seed_database():
 
     # Check if already seeded
     if db.query(User).filter_by(username="admin").first():
-        print("[DB SEED] Database already populated. Ensuring user profiles and alert rules are up to date...")
-        admin_u = db.query(User).filter_by(username="admin").first()
-        if admin_u and admin_u.full_name != "Fahrezi Fauzan":
-            admin_u.full_name = "Fahrezi Fauzan"
-            db.commit()
-        netadmin_u = db.query(User).filter_by(username="netadmin").first()
-        if netadmin_u and netadmin_u.full_name != "John Zhang":
-            netadmin_u.full_name = "John Zhang"
-            db.commit()
+        print("[DB SEED] Database already populated. Ensuring baseline alert rules and settings are active...")
         from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
         seed_default_rules(db)
         get_or_create_alert_settings(db)
-        from app.db.seed_b2b import seed_b2b_connections
-        seed_b2b_connections(db)
+        seed_demo = os.getenv("SEED_DEMO_DATA", "false").lower() in ["true", "1", "yes"]
+        if seed_demo:
+            from app.db.seed_b2b import seed_b2b_connections
+            seed_b2b_connections(db)
         db.close()
         return
 
-    print("[DB SEED] Populating Phillip Securities HK reference dataset...")
+    seed_demo = os.getenv("SEED_DEMO_DATA", "false").lower() in ["true", "1", "yes"]
+    print(f"[DB SEED] Initializing database baseline (seed_demo={seed_demo})...")
 
     # 1. ROLES & PERMISSIONS
     role_names = [
@@ -56,20 +51,81 @@ def seed_database():
         roles_dict[r_name] = role
     db.flush()
 
-    # 2. USERS (Username & Password login, Email optional)
+    # 2. INITIAL ADMIN USER ONLY
     admin_uname = os.getenv("INITIAL_ADMIN_USERNAME", "admin").strip()
     admin_pwd = os.getenv("INITIAL_ADMIN_PASSWORD", "Phillip2026!").strip()
     admin_email = os.getenv("INITIAL_ADMIN_EMAIL", "admin@phillip.com.hk").strip()
+    admin_full_name = os.getenv("INITIAL_ADMIN_FULL_NAME", "Administrator").strip()
 
-    users_data = [
-        (admin_uname, admin_email, admin_pwd, "Fahrezi Fauzan", "VP of Infrastructure & Security", "IT Infrastructure", True, "SUPER_ADMIN"),
+    admin_usr = User(
+        username=admin_uname,
+        email=admin_email,
+        hashed_password=get_password_hash(admin_pwd),
+        full_name=admin_full_name,
+        title="System Administrator",
+        department="IT Infrastructure",
+        is_active=True,
+        is_superuser=True
+    )
+    db.add(admin_usr)
+    db.flush()
+    db.add(UserRole(user_id=admin_usr.id, role_id=roles_dict["SUPER_ADMIN"].id))
+    db.flush()
+
+    created_users = [admin_usr]
+
+    # 3. OWNERSHIP TYPES (Standard baseline categories)
+    ownership_data = [
+        ("COMPANY", "Company Owned", "Fully capitalized asset owned by enterprise"),
+        ("RENTAL", "Rental", "Short-to-medium term leased equipment from vendor or telco partner"),
+        ("LEASED", "Leased", "Capital/operating financial lease with buyout option"),
+        ("VENDOR", "Vendor Provided", "Hardware supplied under Managed Services agreement"),
+        ("CUSTOMER", "Customer Owned", "Colocated DMA/HFT gateway owned by institutional client")
+    ]
+    ownership_dict = {}
+    for code, name, desc in ownership_data:
+        ot = OwnershipType(code=code, name=name, description=desc)
+        db.add(ot)
+        ownership_dict[code] = ot
+    db.flush()
+
+    # 4. DEVICE CATEGORIES (Standard baseline hardware categories)
+    cat_raw = [
+        ("Switch", "SW", "Server", "Layer 2/3 Enterprise & Top-of-Rack Switches"),
+        ("Router", "RT", "Route", "Core Backbone, WAN Aggregation, and BGP Edge Routers"),
+        ("Firewall", "FW", "Shield", "Next-Generation Firewalls (NGFW) & Threat Prevention"),
+        ("Wireless", "AP", "Wifi", "Wi-Fi 6/6E Enterprise Access Points and Controllers"),
+        ("Others", "OTH", "Cpu", "Application Delivery Controllers, Console Servers, Taps")
+    ]
+    categories_dict = {}
+    for name, code, icon, desc in cat_raw:
+        c = DeviceCategory(name=name, code=code, icon=icon, description=desc)
+        db.add(c)
+        categories_dict[name] = c
+    db.flush()
+
+    # 5. INITIALIZE AUTOMATED ALERT RULES & SETTINGS
+    from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
+    seed_default_rules(db)
+    get_or_create_alert_settings(db)
+
+    # Clean production check: if demo dataset is disabled, commit baseline and exit!
+    if not seed_demo:
+        db.commit()
+        db.close()
+        print("[DB SEED] Production clean baseline initialized successfully. (SEED_DEMO_DATA=false: Zero demo users, zero vendors, zero locations, zero assets, zero dump data).")
+        return
+
+    print("[DB SEED] Populating demo reference dataset...")
+
+    # Optional demo users
+    demo_users_data = [
         ("netadmin", "netadmin@phillip.com.hk", "Phillip2026!", "John Zhang", "Lead Network Architect", "Network Engineering", False, "NETWORK_ADMIN"),
         ("assetmgr", "assetmgr@phillip.com.hk", "Phillip2026!", "Kelvin Chan", "IT Asset & Procurement Lead", "IT Operations", False, "ASSET_MANAGER"),
         ("contractmgr", "contractmgr@phillip.com.hk", "Phillip2026!", "Grace Liu", "Senior Vendor & Contract Manager", "Finance & Vendor Management", False, "CONTRACT_MANAGER"),
         ("viewer", "viewer@phillip.com.hk", "Phillip2026!", "Auditor Guest", "Compliance & Audit Specialist", "Internal Audit", False, "VIEWER")
     ]
-    created_users = []
-    for uname, email, pwd, name, title, dept, is_super, r_name in users_data:
+    for uname, email, pwd, name, title, dept, is_super, r_name in demo_users_data:
         usr = User(
             username=uname,
             email=email,
@@ -82,24 +138,8 @@ def seed_database():
         )
         db.add(usr)
         db.flush()
-        user_role = UserRole(user_id=usr.id, role_id=roles_dict[r_name].id)
-        db.add(user_role)
+        db.add(UserRole(user_id=usr.id, role_id=roles_dict[r_name].id))
         created_users.append(usr)
-    db.flush()
-
-    # 3. OWNERSHIP TYPES
-    ownership_data = [
-        ("COMPANY", "Company Owned", "Fully capitalized asset owned by Phillip Securities (HK) Ltd"),
-        ("RENTAL", "Rental", "Short-to-medium term leased equipment from vendor or telco partner"),
-        ("LEASED", "Leased", "Capital/operating financial lease with buyout option"),
-        ("VENDOR", "Vendor Provided", "Hardware supplied under Managed Services agreement"),
-        ("CUSTOMER", "Customer Owned", "Colocated DMA/HFT gateway owned by institutional client")
-    ]
-    ownership_dict = {}
-    for code, name, desc in ownership_data:
-        ot = OwnershipType(code=code, name=name, description=desc)
-        db.add(ot)
-        ownership_dict[code] = ot
     db.flush()
 
     # 4. VENDORS (14 vendors matching KPI)
@@ -190,22 +230,7 @@ def seed_database():
             racks_list.append((code, r_name, r))
     db.flush()
 
-    # 6. DEVICE CATEGORIES
-    cat_raw = [
-        ("Switch", "SW", "Server", "Layer 2/3 Enterprise & Top-of-Rack Switches"),
-        ("Router", "RT", "Route", "Core Backbone, WAN Aggregation, and BGP Edge Routers"),
-        ("Firewall", "FW", "Shield", "Next-Generation Firewalls (NGFW) & Threat Prevention"),
-        ("Wireless", "AP", "Wifi", "Wi-Fi 6/6E Enterprise Access Points and Controllers"),
-        ("Others", "OTH", "Cpu", "Application Delivery Controllers, Console Servers, Taps")
-    ]
-    categories_dict = {}
-    for name, code, icon, desc in cat_raw:
-        c = DeviceCategory(name=name, code=code, icon=icon, description=desc)
-        db.add(c)
-        categories_dict[name] = c
-    db.flush()
-
-    # 7. DEVICE MODELS
+    # 6. DEVICE MODELS
     models_raw = [
         # Switches
         ("C9300-48P", "Cisco", "Switch", "V02", 48, 1, "Catalyst 9300 48-port PoE+ Core & Access Switch"),
@@ -248,17 +273,6 @@ def seed_database():
         db.add(dm)
         models_dict[m_name] = dm
     db.flush()
-
-    # Check if demo dataset should be seeded or if we should keep it clean for production
-    seed_demo = os.getenv("SEED_DEMO_DATA", "true").lower() in ["true", "1", "yes"]
-    if not seed_demo:
-        from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
-        seed_default_rules(db)
-        get_or_create_alert_settings(db)
-        db.commit()
-        db.close()
-        print("[DB SEED] Production clean baseline initialized successfully. (SEED_DEMO_DATA=false: Zero demo assets or dump contracts created).")
-        return
 
     # 8. CONTRACTS (32 active contracts matching KPI, with 8 expiring within 90 days)
     today = datetime.date(2025, 11, 7)
@@ -852,28 +866,22 @@ def seed_database():
 
     audit_entry = AuditLog(
         user_id=created_users[0].id,
-        user_email="admin@phillip.com.hk",
+        user_email=admin_email,
         action="SYSTEM_INIT",
         entity_type="SYSTEM",
-        entity_id="PSHK-INIT-001",
-        details="Network Asset Management System initialized with 1,248 assets, 32 active contracts, 14 vendors, and 6 sites.",
-        ip_address="10.200.10.25"
+        entity_id="SYS-INIT-001",
+        details="Network Asset Management System demo dataset initialized successfully.",
+        ip_address="127.0.0.1"
     )
     db.add(audit_entry)
     db.commit()
 
-    # 15. INITIALIZE AUTOMATED ALERT RULES & SETTINGS
-    from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
-    print("[DB SEED] Seeding default enterprise alert rules and settings...")
-    seed_default_rules(db)
-    get_or_create_alert_settings(db)
-
-    # 16. B2B CONNECTION PROFILES
+    # 15. B2B CONNECTION PROFILES
     from app.db.seed_b2b import seed_b2b_connections
     seed_b2b_connections(db)
 
     db.close()
-    print("[DB SEED] Complete! Database populated successfully with high-fidelity Phillip Securities HK enterprise data.")
+    print("[DB SEED] Demo dataset populated successfully.")
 
 if __name__ == "__main__":
     seed_database()

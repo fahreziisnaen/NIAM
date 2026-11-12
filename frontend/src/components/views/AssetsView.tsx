@@ -35,6 +35,7 @@ export function AssetsView({
   const [assets, setAssets] = useState<DeviceItem[]>([]);
   const [totalAssets, setTotalAssets] = useState(0);
   const [stats, setStats] = useState<any>(null);
+  const [hardwareModels, setHardwareModels] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -50,6 +51,11 @@ export function AssetsView({
     fetch(apiUrl("/api/v1/dashboard/stats"))
       .then((res) => res.json())
       .then((data) => setStats(data))
+      .catch(() => {});
+
+    fetch(apiUrl("/api/v1/assets/models"))
+      .then((res) => res.json())
+      .then((data) => setHardwareModels(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
 
@@ -86,10 +92,10 @@ export function AssetsView({
           id: item.id,
           asset_id: item.asset_id,
           hostname: item.hostname,
-          model: item.model_name || "Device",
-          vendor: item.vendor_name || item.manufacturer,
+          model: item.model_name || "—",
+          vendor: item.vendor_name || item.manufacturer || "—",
           serial_number: item.serial_number,
-          location: item.location_display || "HK-DC1 / Rack A1",
+          location: item.location_display || "—",
           status: item.operational_status,
           ownership: item.ownership_type,
         }));
@@ -194,29 +200,30 @@ export function AssetsView({
       {/* SUB-VIEW 2: HARDWARE MODELS CATALOG */}
       {subCategory === "models" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { model: "C9300-48P", mfg: "Cisco", ports: 48, u: 1, eol: "2029-12-31", desc: "Catalyst 9300 PoE+ Enterprise Campus Switch" },
-            { model: "PA-3220", mfg: "Palo Alto", ports: 12, u: 2, eol: "2029-10-31", desc: "Next-Gen Enterprise High-Availability Firewall" },
-            { model: "ISR4431", mfg: "Cisco", ports: 8, u: 1, eol: "2028-11-30", desc: "Integrated Services Router WAN Gateway" },
-            { model: "FortiGate 100F", mfg: "Fortinet", ports: 22, u: 1, eol: "2030-05-31", desc: "Secure SD-WAN & Enterprise Security Appliance" },
-            { model: "S5735-L48T4S", mfg: "Huawei", ports: 48, u: 1, eol: "2029-08-31", desc: "CloudEngine Gigabit Enterprise Switch" },
-            { model: "C9130AXI", mfg: "Cisco", ports: 2, u: 1, eol: "2031-12-31", desc: "Catalyst 9130AX Series Wi-Fi 6 AP" },
-            { model: "Nexus 93180YC", mfg: "Cisco", ports: 48, u: 1, eol: "2030-12-31", desc: "100G Spine-Leaf Datacenter Switch" },
-            { model: "BIG-IP i4800", mfg: "F5", ports: 8, u: 1, eol: "2029-04-30", desc: "Application Delivery Controller & SSL Offload" },
-          ].map((m) => (
-            <div key={m.model} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-600">{m.mfg}</span>
-                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">{m.u}U • {m.ports} Ports</span>
+          {hardwareModels.length > 0 ? (
+            hardwareModels.map((m) => (
+              <div key={m.id || m.model} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-600">{m.mfg}</span>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+                    {m.u || 1}U • {m.ports || 0} Ports
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">{m.model}</h3>
+                <p className="text-[11px] text-slate-500 line-clamp-2">{m.desc || "Hardware model specification"}</p>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                  <span>End-of-Life:</span>
+                  <span className="font-semibold text-slate-800">{m.eol || "—"}</span>
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-slate-900">{m.model}</h3>
-              <p className="text-[11px] text-slate-500 line-clamp-2">{m.desc}</p>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
-                <span>End-of-Life:</span>
-                <span className="font-semibold text-slate-800">{m.eol}</span>
-              </div>
+            ))
+          ) : (
+            <div className="col-span-full bg-white p-8 rounded-xl border border-slate-200 text-center">
+              <Layers className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-slate-700">No hardware models catalogued</p>
+              <p className="text-xs text-slate-400 mt-1">Register models in the database to display hardware specifications</p>
             </div>
-          ))}
+          )}
         </div>
       )}
 

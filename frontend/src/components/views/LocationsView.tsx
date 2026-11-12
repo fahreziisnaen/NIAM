@@ -121,10 +121,10 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
     rack_name: "",
     rack_number: "",
     floor_id: 1,
-    room: "Main Server Hall",
+    room: "",
     total_u: 42,
-    power_feed: "Dual A+B Redundant (32A)",
-    max_power_kw: "10kW",
+    power_feed: "",
+    max_power_kw: "",
   });
 
   const [actionError, setActionError] = useState<string | null>(null);
@@ -475,10 +475,10 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
       rack_name: "",
       rack_number: "",
       floor_id: floors.length > 0 ? floors[0].id : 1,
-      room: "Server Hall A",
+      room: "",
       total_u: 42,
-      power_feed: "Dual A+B Redundant (32A)",
-      max_power_kw: "10kW",
+      power_feed: "",
+      max_power_kw: "",
     });
     setRackModalOpen(true);
   };
@@ -489,10 +489,10 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
       rack_name: r.rack_name,
       rack_number: r.rack_number,
       floor_id: r.floor_id,
-      room: r.room || "Server Hall A",
+      room: r.room || "",
       total_u: r.total_u || 42,
-      power_feed: r.power_feed || "Dual A+B Redundant (32A)",
-      max_power_kw: r.max_power_kw || "10kW",
+      power_feed: r.power_feed || "",
+      max_power_kw: r.max_power_kw || "",
     });
     setRackModalOpen(true);
   };
@@ -1315,7 +1315,7 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Manufacturer</span>
-                      <span className="font-semibold text-slate-800">{selectedUnitItem.manufacturer || "Cisco Systems"}</span>
+                      <span className="font-semibold text-slate-800">{selectedUnitItem.manufacturer || "—"}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Model</span>
@@ -1951,13 +1951,13 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                         <span>{selectedSiteDetail.address || "—"}</span>
                       </p>
                       <p className="text-slate-500 pt-1">
-                        Region: <span className="font-semibold text-slate-700">{selectedSiteDetail.city || "Hong Kong"}, {selectedSiteDetail.country || "Hong Kong"}</span>
+                        Region: <span className="font-semibold text-slate-700">{selectedSiteDetail.city || "—"}{selectedSiteDetail.country ? `, ${selectedSiteDetail.country}` : ""}</span>
                       </p>
                     </div>
 
                     <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">On-Site Facility Contact</span>
-                      <p className="font-semibold text-slate-800 text-sm">{selectedSiteDetail.contact_person || "Facility Operations Team"}</p>
+                      <p className="font-semibold text-slate-800 text-sm">{selectedSiteDetail.contact_person || "—"}</p>
                       {selectedSiteDetail.contact_phone && (
                         <p className="text-slate-600 flex items-center space-x-2">
                           <Phone className="w-4 h-4 text-slate-400 shrink-0" />
@@ -2344,7 +2344,7 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                     <p className="font-semibold text-slate-800 text-sm">{selectedBuildingDetail.name}</p>
                     <p className="text-slate-600 flex items-start space-x-2">
                       <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                      <span>{selectedBuildingDetail.address || "Same as Parent Facility"}</span>
+                      <span>{selectedBuildingDetail.address || "—"}</span>
                     </p>
                   </div>
                 </div>
@@ -2599,7 +2599,7 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mt-0.5">{selectedRackDetail.rack_name}</h3>
                   <p className="text-[11px] text-slate-500">
-                    Location: {selectedRackDetail.location_name} • {selectedRackDetail.building_name || "Main Building"} • {selectedRackDetail.floor_name} • {selectedRackDetail.room}
+                    Location: {selectedRackDetail.location_name}{selectedRackDetail.building_name ? ` • ${selectedRackDetail.building_name}` : ""}{selectedRackDetail.floor_name ? ` • ${selectedRackDetail.floor_name}` : ""}{selectedRackDetail.room ? ` • ${selectedRackDetail.room}` : ""}
                   </p>
                 </div>
               </div>

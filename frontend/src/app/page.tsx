@@ -158,10 +158,10 @@ export default function Home() {
           id: item.id,
           asset_id: item.asset_id,
           hostname: item.hostname,
-          model: item.model_name || "Device",
-          vendor: item.vendor_name || item.manufacturer,
+          model: item.model_name || "—",
+          vendor: item.vendor_name || item.manufacturer || "—",
           serial_number: item.serial_number,
-          location: item.location_display || "HK-DC1 / Rack A1",
+          location: item.location_display || "—",
           status: item.operational_status,
           ownership: item.ownership_type,
         }));

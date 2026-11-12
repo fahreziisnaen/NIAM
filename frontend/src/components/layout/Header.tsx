@@ -106,9 +106,9 @@ export function Header({
     return name.slice(0, 2).toUpperCase();
   };
 
-  const displayName = currentUser?.full_name || "Fahrezi Fauzan";
-  const displayUsername = currentUser?.username || "admin";
-  const displayEmail = currentUser?.email || "admin@phillip.com.hk";
+  const displayName = currentUser?.full_name || currentUser?.username || "Administrator";
+  const displayUsername = currentUser?.username || "";
+  const displayEmail = currentUser?.email || "";
   const displayRole = currentUser?.roles?.[0] || (currentUser?.is_superuser ? "SUPER ADMIN" : "ADMIN");
   const is2FA = Boolean(currentUser?.is_two_factor_enabled);
 
@@ -130,7 +130,7 @@ export function Header({
       setEditFullName(currentUser.full_name || "");
       setEditEmail(currentUser.email || "");
       setEditTitle(currentUser.title || "");
-      setEditDepartment(currentUser.department || "IT Infrastructure");
+      setEditDepartment(currentUser.department || "");
       setEditPhone(currentUser.phone || "");
     }
   }, [currentUser, showProfileModal]);
@@ -728,15 +728,15 @@ export function Header({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">JOB TITLE</span>
-                    <span className="text-slate-800 font-medium truncate block">{currentUser?.title || "VP of Infrastructure & Security"}</span>
+                    <span className="text-slate-800 font-medium truncate block">{currentUser?.title || "—"}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">DEPARTMENT</span>
-                    <span className="text-slate-800 font-medium truncate block">{currentUser?.department || "IT Infrastructure"}</span>
+                    <span className="text-slate-800 font-medium truncate block">{currentUser?.department || "—"}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">PHONE</span>
-                    <span className="text-slate-800 font-medium truncate block">{currentUser?.phone || "+852 2277 6688"}</span>
+                    <span className="text-slate-800 font-medium truncate block">{currentUser?.phone || "—"}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">GOOGLE 2FA STATUS</span>
@@ -746,7 +746,7 @@ export function Header({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">PRIMARY SITE</span>
-                    <span className="text-slate-800 font-medium">Exchange Square HQ, HK</span>
+                    <span className="text-slate-800 font-medium">—</span>
                   </div>
                 </div>
 
@@ -792,7 +792,7 @@ export function Header({
                     required
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
-                    placeholder="e.g. Fahrezi Fauzan"
+                    placeholder="e.g. Administrator"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -806,7 +806,7 @@ export function Header({
                       type="email"
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
-                      placeholder="e.g. fahrezi@phillip.com.hk"
+                      placeholder="e.g. admin@example.com"
                       className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                     />
                   </div>
@@ -818,7 +818,7 @@ export function Header({
                       type="text"
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
-                      placeholder="+852 2277 6688"
+                      placeholder="e.g. +1 555-0100"
                       className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                     />
                   </div>
@@ -833,7 +833,7 @@ export function Header({
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      placeholder="VP of Infrastructure & Security"
+                      placeholder="e.g. Systems Engineer"
                       className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                     />
                   </div>
@@ -845,7 +845,7 @@ export function Header({
                       type="text"
                       value={editDepartment}
                       onChange={(e) => setEditDepartment(e.target.value)}
-                      placeholder="IT Infrastructure"
+                      placeholder="e.g. Infrastructure"
                       className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
                     />
                   </div>

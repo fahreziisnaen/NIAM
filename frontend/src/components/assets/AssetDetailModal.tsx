@@ -99,7 +99,7 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                 )}
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
-                {asset ? `${asset.manufacturer} ${asset.model_name} • ${asset.location_display || "Central HQ"}` : "Loading asset specification..."}
+                {asset ? `${asset.manufacturer} ${asset.model_name} • ${asset.location_display || "—"}` : "Loading asset specification..."}
               </p>
             </div>
           </div>
@@ -180,7 +180,7 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                       <span className="text-slate-500">Serial Number:</span>
                       <span className="font-mono text-slate-800">{asset.serial_number}</span>
                       <span className="text-slate-500">Asset Tag:</span>
-                      <span className="font-mono text-slate-800">{asset.asset_tag || "PSHK-TAG-01"}</span>
+                      <span className="font-mono text-slate-800">{asset.asset_tag || "—"}</span>
                       <span className="text-slate-500">Category:</span>
                       <span className="font-semibold text-slate-900">{asset.category_name}</span>
                       <span className="text-slate-500">Device Role:</span>
@@ -202,21 +202,21 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                           <span className="text-slate-500">Rental Distributor / Provider:</span>
                           <span className="font-semibold text-amber-800">{asset.rental_provider}</span>
                           <span className="text-slate-500">Rental Agreement Ref:</span>
-                          <span className="font-mono text-slate-800">{asset.rental_agreement_ref || "RA-2024-HKT-99"}</span>
+                          <span className="font-mono text-slate-800">{asset.rental_agreement_ref || "—"}</span>
                           <span className="text-slate-500">Monthly Rental:</span>
                           <span className="font-semibold text-slate-900">HKD {asset.monthly_rental_cost?.toLocaleString()}</span>
                           <span className="text-slate-500">Rental Expiration:</span>
-                          <span className="text-amber-700 font-semibold">{asset.rental_end_date || "2026-06-30"}</span>
+                          <span className="text-amber-700 font-semibold">{asset.rental_end_date || "—"}</span>
                         </>
                       )}
                       <span className="text-slate-500">PO Number:</span>
-                      <span className="font-mono text-slate-800">{asset.po_number || "PO-2024-8891"}</span>
+                      <span className="font-mono text-slate-800">{asset.po_number || "—"}</span>
                       <span className="text-slate-500">Purchase Price:</span>
                       <span className="font-semibold text-slate-900">HKD {asset.purchase_price?.toLocaleString()}</span>
                       <span className="text-slate-500">Acquisition Date:</span>
-                      <span className="text-slate-800">{asset.acquisition_date || "2024-01-10"}</span>
+                      <span className="text-slate-800">{asset.acquisition_date || "—"}</span>
                       <span className="text-slate-500">Deployment Date:</span>
-                      <span className="text-slate-800">{asset.deployment_date || "2024-02-15"}</span>
+                      <span className="text-slate-800">{asset.deployment_date || "—"}</span>
                     </div>
                   </div>
 
@@ -228,11 +228,11 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                       <div>
                         <span className="text-slate-500 block">Site / Facility:</span>
-                        <span className="font-semibold text-slate-900">{asset.location_display || "HK-DC1 Mega-i"}</span>
+                        <span className="font-semibold text-slate-900">{asset.location_display || "—"}</span>
                       </div>
                       <div>
                         <span className="text-slate-500 block">Rack Position:</span>
-                        <span className="font-semibold text-slate-900">{asset.rack_position || "U36 - U38"}</span>
+                        <span className="font-semibold text-slate-900">{asset.rack_position || "—"}</span>
                       </div>
                       <div>
                         <span className="text-slate-500 block">Condition:</span>
@@ -240,7 +240,7 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                       </div>
                       <div>
                         <span className="text-slate-500 block">End of Life (EOL):</span>
-                        <span className="text-slate-800">{asset.end_of_life_date || "2029-12-31"}</span>
+                        <span className="text-slate-800">{asset.end_of_life_date || "—"}</span>
                       </div>
                     </div>
                   </div>
@@ -255,14 +255,14 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                     <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                       <span className="text-xs text-slate-500 block font-medium">Management IP Address</span>
                       <span className="text-sm font-bold font-mono text-blue-700 mt-1 block">
-                        {asset.management_ip || "10.200.10.1"}
+                        {asset.management_ip || "—"}
                       </span>
                       <span className="text-[11px] text-slate-400 mt-0.5 block">{asset.subnet}</span>
                     </div>
                     <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                       <span className="text-xs text-slate-500 block font-medium">Physical MAC Address</span>
                       <span className="text-sm font-bold font-mono text-slate-800 mt-1 block">
-                        {asset.mac_address || "00:1B:17:00:23:4A"}
+                        {asset.mac_address || "—"}
                       </span>
                       <span className="text-[11px] text-slate-400 mt-0.5 block">VLAN: {asset.vlan}</span>
                     </div>
@@ -290,20 +290,28 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {asset.interfaces?.map((iface: any) => (
-                          <tr key={iface.id} className="hover:bg-slate-50">
-                            <td className="py-2.5 font-mono font-medium text-slate-800">{iface.name}</td>
-                            <td className="py-2.5 font-mono text-slate-600">{iface.ip_address || "—"}</td>
-                            <td className="py-2.5 text-slate-600">{iface.speed}</td>
-                            <td className="py-2.5 text-slate-600">{iface.duplex}</td>
-                            <td className="py-2.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${iface.status === "Up" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-                                {iface.status}
-                              </span>
+                        {(!asset.interfaces || asset.interfaces.length === 0) ? (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-slate-400">
+                              No physical network interfaces registered
                             </td>
-                            <td className="py-2.5 text-slate-600">{iface.uplink_target ? `${iface.uplink_target} (${iface.uplink_port})` : "None"}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          asset.interfaces.map((iface: any) => (
+                            <tr key={iface.id} className="hover:bg-slate-50">
+                              <td className="py-2.5 font-mono font-medium text-slate-800">{iface.name}</td>
+                              <td className="py-2.5 font-mono text-slate-600">{iface.ip_address || "—"}</td>
+                              <td className="py-2.5 text-slate-600">{iface.speed}</td>
+                              <td className="py-2.5 text-slate-600">{iface.duplex}</td>
+                              <td className="py-2.5">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${iface.status === "Up" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                                  {iface.status}
+                                </span>
+                              </td>
+                              <td className="py-2.5 text-slate-600">{iface.uplink_target ? `${iface.uplink_target} (${iface.uplink_port})` : "None"}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -385,21 +393,29 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {asset.topology_neighbors?.map((nbr: any) => (
-                        <tr key={nbr.connection_id} className="hover:bg-slate-50">
-                          <td className="py-2.5 font-mono font-bold text-slate-800">{nbr.local_port}</td>
-                          <td className="py-2.5 font-semibold text-blue-600">{nbr.remote_device}</td>
-                          <td className="py-2.5 text-slate-600">{nbr.remote_model}</td>
-                          <td className="py-2.5 font-mono text-slate-700">{nbr.remote_port}</td>
-                          <td className="py-2.5 text-slate-600">{nbr.connection_type}</td>
-                          <td className="py-2.5 text-slate-700 font-medium">{nbr.bandwidth}</td>
-                          <td className="py-2.5">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                              {nbr.status}
-                            </span>
+                      {(!asset.topology_neighbors || asset.topology_neighbors.length === 0) ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                            No active topology connections found for this device.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        asset.topology_neighbors.map((nbr: any) => (
+                          <tr key={nbr.connection_id} className="hover:bg-slate-50">
+                            <td className="py-2.5 font-mono font-bold text-slate-800">{nbr.local_port}</td>
+                            <td className="py-2.5 font-semibold text-blue-600">{nbr.remote_device}</td>
+                            <td className="py-2.5 text-slate-600">{nbr.remote_model}</td>
+                            <td className="py-2.5 font-mono text-slate-700">{nbr.remote_port}</td>
+                            <td className="py-2.5 text-slate-600">{nbr.connection_type}</td>
+                            <td className="py-2.5 text-slate-700 font-medium">{nbr.bandwidth}</td>
+                            <td className="py-2.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                                {nbr.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -457,23 +473,29 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                       <span>Upload Document</span>
                     </button>
                   </div>
-                  <div className="divide-y divide-slate-100">
-                    {asset.documents?.map((doc: any) => (
-                      <div key={doc.id} className="py-3 flex items-center justify-between text-xs hover:bg-slate-50 px-2 rounded">
-                        <div className="flex items-center space-x-3">
-                          <FileText className="w-5 h-5 text-blue-500" />
-                          <div>
-                            <span className="font-semibold text-slate-800">{doc.file_name}</span>
-                            <span className="text-[11px] text-slate-400 block">{doc.document_type} • {doc.file_size_kb} KB • {doc.uploaded_by}</span>
+                  {(!asset.documents || asset.documents.length === 0) ? (
+                    <div className="py-8 text-center text-slate-400 text-xs">
+                      No documents or backups attached to this device.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {asset.documents.map((doc: any) => (
+                        <div key={doc.id} className="py-3 flex items-center justify-between text-xs hover:bg-slate-50 px-2 rounded">
+                          <div className="flex items-center space-x-3">
+                            <FileText className="w-5 h-5 text-blue-500" />
+                            <div>
+                              <span className="font-semibold text-slate-800">{doc.file_name}</span>
+                              <span className="text-[11px] text-slate-400 block">{doc.document_type} • {doc.file_size_kb} KB • {doc.uploaded_by}</span>
+                            </div>
                           </div>
+                          <button className="flex items-center space-x-1 text-xs font-medium text-blue-600 hover:text-blue-800">
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download</span>
+                          </button>
                         </div>
-                        <button className="flex items-center space-x-1 text-xs font-medium text-blue-600 hover:text-blue-800">
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Download</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -484,25 +506,31 @@ export function AssetDetailModal({ assetId, onClose, onEdit }: AssetDetailModalP
                     <History className="w-4 h-4 mr-2 text-blue-600" />
                     Asset Modification Audit Trail
                   </h4>
-                  <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
-                    {asset.audit_history?.map((h: any) => (
-                      <div key={h.id} className="relative text-xs">
-                        <div className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-blue-600 ring-4 ring-white" />
-                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-800">{h.action}</span>
-                            <span className="text-[11px] text-slate-400">{h.created_at}</span>
+                  {(!asset.audit_history || asset.audit_history.length === 0) ? (
+                    <div className="py-8 text-center text-slate-400 text-xs">
+                      No modification history recorded for this device.
+                    </div>
+                  ) : (
+                    <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
+                      {asset.audit_history.map((h: any) => (
+                        <div key={h.id} className="relative text-xs">
+                          <div className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-blue-600 ring-4 ring-white" />
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-800">{h.action}</span>
+                              <span className="text-[11px] text-slate-400">{h.created_at}</span>
+                            </div>
+                            <p className="text-slate-600 mt-1">
+                              Modified <span className="font-mono text-slate-800 font-semibold">{h.field_name}</span> from{" "}
+                              <span className="line-through text-slate-400">{h.old_value || "none"}</span> to{" "}
+                              <span className="font-semibold text-emerald-700">{h.new_value}</span>
+                            </p>
+                            <span className="text-[10px] text-slate-500 block mt-1">Changed by: {h.changed_by}</span>
                           </div>
-                          <p className="text-slate-600 mt-1">
-                            Modified <span className="font-mono text-slate-800 font-semibold">{h.field_name}</span> from{" "}
-                            <span className="line-through text-slate-400">{h.old_value || "none"}</span> to{" "}
-                            <span className="font-semibold text-emerald-700">{h.new_value}</span>
-                          </p>
-                          <span className="text-[10px] text-slate-500 block mt-1">Changed by: {h.changed_by}</span>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </>

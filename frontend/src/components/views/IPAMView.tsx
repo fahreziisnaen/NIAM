@@ -274,7 +274,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
       status: rec.status,
       hostname: rec.hostname || "",
       mac_address: rec.mac_address || "",
-      interface_name: rec.interface_name || "GigabitEthernet1/0/1",
+      interface_name: rec.interface_name || "",
       description: rec.description || "",
     });
     setIpModalOpen(true);

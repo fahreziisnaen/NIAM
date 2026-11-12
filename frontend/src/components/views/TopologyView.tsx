@@ -133,9 +133,9 @@ export function TopologyView({ onSelectAsset }: TopologyViewProps = {}) {
       setFormSourceAssetId(devices[0].id);
       setFormTargetAssetId(devices[1].id);
     }
-    setFormSourcePort("Te1/0/1");
-    setFormTargetPort("eth1/1");
-    setFormConnType("10G Fiber SFP+");
+    setFormSourcePort("");
+    setFormTargetPort("");
+    setFormConnType("10G Fiber");
     setFormBandwidth("10 Gbps");
     setFormStatus("Active");
     setFormNotes("");
@@ -516,7 +516,7 @@ export function TopologyView({ onSelectAsset }: TopologyViewProps = {}) {
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Manufacturer</span>
-                      <span className="font-semibold text-slate-800">{selectedNode.manufacturer || "Cisco Systems"}</span>
+                      <span className="font-semibold text-slate-800">{selectedNode.manufacturer || "—"}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Model</span>
@@ -524,7 +524,7 @@ export function TopologyView({ onSelectAsset }: TopologyViewProps = {}) {
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Device Role</span>
-                      <span className="font-semibold text-blue-600">{selectedNode.device_role || "Core"}</span>
+                      <span className="font-semibold text-blue-600">{selectedNode.device_role || "—"}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Facility</span>

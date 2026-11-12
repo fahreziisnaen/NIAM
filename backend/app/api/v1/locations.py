@@ -597,10 +597,10 @@ def create_rack(rack_in: RackCreate, db: Session = Depends(get_db)):
         floor_id=floor_id,
         rack_name=rack_in.rack_name.strip(),
         rack_number=rack_in.rack_number.strip() if rack_in.rack_number else f"RK-{rack_in.rack_name.replace(' ', '')}",
-        room=rack_in.room or "Main Server Hall",
+        room=rack_in.room or "",
         total_u=rack_in.total_u or 42,
-        power_feed=rack_in.power_feed or "Dual A+B Redundant (32A)",
-        max_power_kw=rack_in.max_power_kw or "10kW"
+        power_feed=rack_in.power_feed or "",
+        max_power_kw=rack_in.max_power_kw or ""
     )
     db.add(rack)
     db.commit()

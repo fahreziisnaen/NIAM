@@ -19,35 +19,43 @@ export function AssetFormModal({
   initialData,
   isEdit = false,
 }: AssetFormModalProps) {
+  const [locations, setLocations] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     asset_id: "AUTO",
     hostname: "",
     serial_number: "",
     asset_tag: "",
-    manufacturer: "Cisco",
-    model_name: "C9300-48P",
+    manufacturer: "",
+    model_name: "",
     category_name: "Switch",
-    device_role: "Core / Edge",
+    device_role: "",
     ownership_type: "Company Owned",
     rental_provider: "",
     rental_agreement_ref: "",
     monthly_rental_cost: 0,
     management_ip: "",
     mac_address: "",
-    firmware_version: "17.9.4a",
-    operating_system: "Cisco IOS-XE",
-    location_code: "HK-DC1",
-    rack_position: "Rack A1 / U32",
-    vlan: "VLAN 100",
-    subnet: "10.200.10.0/24",
+    firmware_version: "",
+    operating_system: "",
+    location_code: "",
+    rack_position: "",
+    vlan: "",
+    subnet: "",
     operational_status: "Deployed",
     asset_condition: "Operational",
-    purchase_price: 65000,
+    purchase_price: 0,
     description: "",
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(apiUrl("/api/v1/locations"))
+      .then((res) => res.json())
+      .then((data) => setLocations(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -56,25 +64,25 @@ export function AssetFormModal({
         hostname: initialData.hostname || "",
         serial_number: initialData.serial_number || "",
         asset_tag: initialData.asset_tag || "",
-        manufacturer: initialData.manufacturer || "Cisco",
-        model_name: initialData.model || initialData.model_name || "C9300-48P",
+        manufacturer: initialData.manufacturer || "",
+        model_name: initialData.model || initialData.model_name || "",
         category_name: initialData.category_name || "Switch",
-        device_role: initialData.device_role || "Core / Edge",
+        device_role: initialData.device_role || "",
         ownership_type: initialData.ownership || initialData.ownership_type || "Company Owned",
         rental_provider: initialData.rental_provider || "",
         rental_agreement_ref: initialData.rental_agreement_ref || "",
         monthly_rental_cost: initialData.monthly_rental_cost || 0,
         management_ip: initialData.management_ip || "",
         mac_address: initialData.mac_address || "",
-        firmware_version: initialData.firmware_version || "17.9.4a",
-        operating_system: initialData.operating_system || "Cisco IOS-XE",
-        location_code: initialData.location?.split(" / ")[0] || "HK-DC1",
-        rack_position: initialData.location || "HK-DC1 / Rack A1",
-        vlan: initialData.vlan || "VLAN 100",
-        subnet: initialData.subnet || "10.200.10.0/24",
+        firmware_version: initialData.firmware_version || "",
+        operating_system: initialData.operating_system || "",
+        location_code: initialData.location?.split(" / ")[0] || "",
+        rack_position: initialData.location || "",
+        vlan: initialData.vlan || "",
+        subnet: initialData.subnet || "",
         operational_status: initialData.status || initialData.operational_status || "Deployed",
         asset_condition: initialData.asset_condition || "Operational",
-        purchase_price: initialData.purchase_price || 65000,
+        purchase_price: initialData.purchase_price || 0,
         description: initialData.description || "",
       });
     } else {
@@ -83,25 +91,25 @@ export function AssetFormModal({
         hostname: "",
         serial_number: "",
         asset_tag: "",
-        manufacturer: "Cisco",
-        model_name: "C9300-48P",
+        manufacturer: "",
+        model_name: "",
         category_name: "Switch",
-        device_role: "Core / Edge",
+        device_role: "",
         ownership_type: "Company Owned",
         rental_provider: "",
         rental_agreement_ref: "",
         monthly_rental_cost: 0,
         management_ip: "",
         mac_address: "",
-        firmware_version: "17.9.4a",
-        operating_system: "Cisco IOS-XE",
-        location_code: "HK-DC1",
-        rack_position: "Rack A1 / U32",
-        vlan: "VLAN 100",
-        subnet: "10.200.10.0/24",
+        firmware_version: "",
+        operating_system: "",
+        location_code: "",
+        rack_position: "",
+        vlan: "",
+        subnet: "",
         operational_status: "Deployed",
         asset_condition: "Operational",
-        purchase_price: 65000,
+        purchase_price: 0,
         description: "",
       });
     }
@@ -135,21 +143,23 @@ export function AssetFormModal({
       asset_id: formData.asset_id === "AUTO" ? "" : formData.asset_id,
       hostname: formData.hostname.trim(),
       serial_number: formData.serial_number.trim(),
-      asset_tag: formData.asset_tag.trim() || `PSHK-${formData.hostname.toUpperCase()}`,
+      asset_tag: formData.asset_tag.trim(),
       manufacturer: formData.manufacturer,
-      device_name: `${formData.model_name} (${formData.hostname})`,
-      description: formData.description || `Enterprise network asset at ${formData.location_code}`,
+      device_name: formData.model_name ? `${formData.model_name} (${formData.hostname})` : formData.hostname,
+      description: formData.description,
       device_type: "Network Infrastructure",
       device_role: formData.device_role,
       ownership_type: formData.ownership_type,
-      rental_provider: isRent ? (formData.rental_provider || "HKT Enterprise Solutions") : null,
-      rental_agreement_ref: isRent ? (formData.rental_agreement_ref || "RA-2024-HKT-99") : null,
+      rental_provider: isRent ? (formData.rental_provider || null) : null,
+      rental_agreement_ref: isRent ? (formData.rental_agreement_ref || null) : null,
       monthly_rental_cost: isRent ? (Number(formData.monthly_rental_cost) || 0) : 0,
-      management_ip: formData.management_ip.trim() || "10.200.10.50",
-      mac_address: formData.mac_address.trim() || "00:1B:17:88:99:AA",
+      management_ip: formData.management_ip.trim(),
+      mac_address: formData.mac_address.trim(),
       firmware_version: formData.firmware_version,
       operating_system: formData.operating_system,
-      location_display: `${formData.location_code} / ${formData.rack_position.split(" / ")[0] || "Rack A1"}`,
+      location_display: formData.location_code && formData.rack_position
+        ? `${formData.location_code} / ${formData.rack_position}`
+        : formData.location_code || formData.rack_position || "",
       vlan: formData.vlan,
       subnet: formData.subnet,
       operational_status: formData.operational_status,
@@ -352,12 +362,12 @@ export function AssetFormModal({
                   onChange={handleChange}
                   className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                 >
-                  <option value="HK-DC1">HK-DC1 Mega-i Chai Wan</option>
-                  <option value="HK-DC2">HK-DC2 Equinix HK1</option>
-                  <option value="HK-HQ">HK-HQ Exchange Square Central</option>
-                  <option value="HK-ADM">HK-ADM Admiralty Branch</option>
-                  <option value="HK-KLN">HK-KLN Kowloon TST Branch</option>
-                  <option value="HK-DR">HK-DR Tsuen Wan DR Site</option>
+                  <option value="">Select Location</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id || loc.code} value={loc.code}>
+                      {loc.code} - {loc.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

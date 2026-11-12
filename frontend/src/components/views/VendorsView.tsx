@@ -534,15 +534,15 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                   >
                     <div className="flex items-center space-x-2">
                       <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{v.address || "Hong Kong"}</span>
+                      <span className="truncate">{v.address || "—"}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>{v.phone || v.support_hotline || "+852 2888 8888"}</span>
+                      <span>{v.phone || v.support_hotline || "—"}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{v.email || v.support_email || "support@vendor.com"}</span>
+                      <span className="truncate">{v.email || v.support_email || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -731,7 +731,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                       <div>
                         <span className="text-slate-400 block font-medium">Category / Role</span>
                         <span className="font-semibold text-slate-800 mt-0.5 block">
-                          {detailVendor.category || "Principal / OEM"}
+                          {detailVendor.category || "—"}
                         </span>
                       </div>
                       <div>
@@ -743,7 +743,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                       <div>
                         <span className="text-slate-400 block font-medium">Jurisdiction / Country</span>
                         <span className="font-semibold text-slate-800 mt-0.5 block">
-                          {detailVendor.country || "Hong Kong"}
+                          {detailVendor.country || "—"}
                         </span>
                       </div>
                     </div>
@@ -791,7 +791,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                       <div className="space-y-2 text-xs">
                         <div>
                           <span className="text-slate-400 block">Support Desk / Lead</span>
-                          <span className="font-medium text-slate-800">{detailVendor.support_contact || "24/7 Enterprise TAC"}</span>
+                          <span className="font-medium text-slate-800">{detailVendor.support_contact || "—"}</span>
                         </div>
                         <div>
                           <span className="text-slate-400 block">Hotline</span>
@@ -824,7 +824,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                       <div>
                         <span className="text-slate-400 block">Physical Address</span>
                         <p className="text-slate-700 mt-1 leading-relaxed">
-                          {detailVendor.address || "Hong Kong SAR"}
+                          {detailVendor.address || "—"}
                         </p>
                       </div>
                       <div>
@@ -1110,7 +1110,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                     type="text"
                     value={editVendor.support_hotline || ""}
                     onChange={(e) => setEditVendor({ ...editVendor, support_hotline: e.target.value })}
-                    placeholder="+852 2888 8888"
+                    placeholder="e.g. +1 555-0100"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg font-mono focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -1321,7 +1321,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                     type="text"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
-                    placeholder="e.g. +852 2888 8888"
+                    placeholder="e.g. +1 555-0100"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg font-mono focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -1334,7 +1334,7 @@ export function VendorsView({ onSelectAsset, onSelectContract }: VendorsViewProp
                     type="text"
                     value={newHotline}
                     onChange={(e) => setNewHotline(e.target.value)}
-                    placeholder="e.g. +852 2888 8800"
+                    placeholder="e.g. +1 555-0199"
                     className="w-full px-3 py-1.5 border border-slate-300 rounded-lg font-mono focus:border-blue-600 focus:outline-none"
                   />
                 </div>

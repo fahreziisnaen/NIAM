@@ -37,9 +37,9 @@ def get_network_topology(db: Session = Depends(get_db)):
             "model": a.model.model_name if a.model else "Device",
             "manufacturer": a.manufacturer,
             "category": a.category.name if a.category else "Network Device",
-            "device_role": a.device_role or "Switch",
+            "device_role": a.device_role or "",
             "management_ip": a.management_ip,
-            "location": a.location_display or "Central HQ",
+            "location": a.location_display or "",
             "status": a.operational_status or "Operational",
             "ownership": a.ownership_type
         })

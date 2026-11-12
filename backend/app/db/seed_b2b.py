@@ -1,3 +1,4 @@
+import os
 import datetime
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
@@ -5,6 +6,11 @@ from app.db.session import engine, SessionLocal, Base
 from app.models.b2b_connection import B2BConnection
 
 def seed_b2b_connections(db: Session = None):
+    seed_demo = os.getenv("SEED_DEMO_DATA", "true").lower() in ["true", "1", "yes"]
+    if not seed_demo:
+        print("[B2B Seed] SEED_DEMO_DATA is false. Skipping B2B connections demo seed.")
+        return
+
     close_at_end = False
     if db is None:
         Base.metadata.create_all(bind=engine)

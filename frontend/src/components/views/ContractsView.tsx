@@ -56,14 +56,14 @@ export function ContractsView({
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("Maintenance Contract");
   const [formVendorId, setFormVendorId] = useState<number>(1);
-  const [formOwner, setFormOwner] = useState("IT Infrastructure Team");
-  const [formStartDate, setFormStartDate] = useState("2025-01-01");
-  const [formEndDate, setFormEndDate] = useState("2026-12-31");
-  const [formValue, setFormValue] = useState<number>(350000);
+  const [formOwner, setFormOwner] = useState("");
+  const [formStartDate, setFormStartDate] = useState("");
+  const [formEndDate, setFormEndDate] = useState("");
+  const [formValue, setFormValue] = useState<number>(0);
   const [formCurrency, setFormCurrency] = useState("HKD");
-  const [formPaymentTerms, setFormPaymentTerms] = useState("Annual Advance / Net 30");
-  const [formSla, setFormSla] = useState("24x7x4hr Mission Critical TAC");
-  const [formSupportLevel, setFormSupportLevel] = useState("Enterprise Tier-1 SLA");
+  const [formPaymentTerms, setFormPaymentTerms] = useState("");
+  const [formSla, setFormSla] = useState("");
+  const [formSupportLevel, setFormSupportLevel] = useState("");
   const [formStatus, setFormStatus] = useState("Active");
   const [formNotes, setFormNotes] = useState("");
 
@@ -224,18 +224,18 @@ export function ContractsView({
 
   // Open Create Modal
   const openCreateModal = () => {
-    setFormNumber(`CT-2025-HK-${Math.floor(Math.random() * 9000) + 1000}`);
+    setFormNumber("");
     setFormName("");
     setFormType("Maintenance Contract");
     setFormVendorId(vendors.length > 0 ? vendors[0].id : 1);
-    setFormOwner("IT Infrastructure Team");
-    setFormStartDate("2025-01-01");
-    setFormEndDate("2026-12-31");
-    setFormValue(350000);
+    setFormOwner("");
+    setFormStartDate(new Date().toISOString().split("T")[0]);
+    setFormEndDate("");
+    setFormValue(0);
     setFormCurrency("HKD");
-    setFormPaymentTerms("Annual Advance / Net 30");
-    setFormSla("24x7x4hr Mission Critical TAC");
-    setFormSupportLevel("Enterprise Tier-1 SLA");
+    setFormPaymentTerms("");
+    setFormSla("");
+    setFormSupportLevel("");
     setFormStatus("Active");
     setFormNotes("");
     setCreateModalOpen(true);
@@ -248,14 +248,14 @@ export function ContractsView({
     setFormName(c.contract_name);
     setFormType(c.contract_type);
     setFormVendorId(c.vendor_id || 1);
-    setFormOwner(c.contract_owner || "IT Infrastructure Team");
-    setFormStartDate(c.start_date || "2025-01-01");
-    setFormEndDate(c.end_date || "2026-12-31");
+    setFormOwner(c.contract_owner || "");
+    setFormStartDate(c.start_date || "");
+    setFormEndDate(c.end_date || "");
     setFormValue(c.contract_value || 0);
     setFormCurrency(c.currency || "HKD");
-    setFormPaymentTerms(c.payment_terms || "Annual Advance / Net 30");
-    setFormSla(c.sla || "24x7x4hr Mission Critical TAC");
-    setFormSupportLevel(c.support_level || "Enterprise Tier-1 SLA");
+    setFormPaymentTerms(c.payment_terms || "");
+    setFormSla(c.sla || "");
+    setFormSupportLevel(c.support_level || "");
     setFormStatus(c.status || "Active");
     setFormNotes(c.notes || "");
     setEditModalOpen(true);
@@ -709,7 +709,7 @@ export function ContractsView({
                     SLA Response Level
                   </span>
                   <span className="text-xs font-bold text-slate-900 mt-0.5 block truncate">
-                    {selectedContract?.sla || "24x7x4hr Mission Critical"}
+                    {selectedContract?.sla || "—"}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">

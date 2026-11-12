@@ -88,9 +88,9 @@ export function AlertRulesView() {
   const [formSeverity, setFormSeverity] = useState<"danger" | "warning" | "info">("warning");
   const [formChannels, setFormChannels] = useState<string[]>(["api", "email"]);
   const [formAutoDispatch, setFormAutoDispatch] = useState(true);
-  const [formTargetId, setFormTargetId] = useState("628123456789");
-  const [formFromSender, setFormFromSender] = useState("respon");
-  const [formEmail, setFormEmail] = useState("noc@phillip.com.hk");
+  const [formTargetId, setFormTargetId] = useState("");
+  const [formFromSender, setFormFromSender] = useState("");
+  const [formEmail, setFormEmail] = useState("");
   const [formCooldownHours, setFormCooldownHours] = useState(24);
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -222,9 +222,9 @@ export function AlertRulesView() {
     setFormSeverity("warning");
     setFormChannels(["api", "email"]);
     setFormAutoDispatch(true);
-    setFormTargetId("628123456789");
-    setFormFromSender("respon");
-    setFormEmail("noc@phillip.com.hk");
+    setFormTargetId("");
+    setFormFromSender("");
+    setFormEmail("");
     setFormCooldownHours(24);
     setFormError(null);
     setRuleModalOpen(true);
@@ -241,9 +241,9 @@ export function AlertRulesView() {
     setFormSeverity(rule.severity);
     setFormChannels(rule.channels || ["api", "email"]);
     setFormAutoDispatch(rule.auto_dispatch);
-    setFormTargetId(rule.custom_target_id || "628123456789");
-    setFormFromSender(rule.custom_from_sender || "respon");
-    setFormEmail(rule.custom_email || "noc@phillip.com.hk");
+    setFormTargetId(rule.custom_target_id || "");
+    setFormFromSender(rule.custom_from_sender || "");
+    setFormEmail(rule.custom_email || "");
     setFormCooldownHours(rule.cooldown_hours || 24);
     setFormError(null);
     setRuleModalOpen(true);
@@ -513,11 +513,11 @@ export function AlertRulesView() {
           </div>
           <div className="mt-2 flex items-baseline space-x-2">
             <span className="text-base font-bold text-slate-900 font-mono truncate">
-              {summary?.target_id || "628123456789"}
+              {summary?.target_id || "Not Configured"}
             </span>
           </div>
           <p className="text-[11px] text-slate-500 truncate mt-1">
-            Recipient: {summary?.email_recipients ? summary.email_recipients.split(",")[0] : "noc@phillip.com.hk"}
+            Recipient: {summary?.email_recipients ? summary.email_recipients.split(",")[0] : "—"}
           </p>
         </div>
       </div>
@@ -882,19 +882,19 @@ export function AlertRulesView() {
                 <p>
                   <strong>Target ID (id):</strong>{" "}
                   <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                    {testModalRule.custom_target_id || "628123456789"}
+                    {testModalRule.custom_target_id || "System Default"}
                   </code>
                 </p>
                 <p>
                   <strong>Sender ID (from):</strong>{" "}
                   <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                    {testModalRule.custom_from_sender || "respon"}
+                    {testModalRule.custom_from_sender || "System Default"}
                   </code>
                 </p>
                 <p>
                   <strong>Recipient Email:</strong>{" "}
                   <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                    {testModalRule.custom_email || "noc@phillip.com.hk"}
+                    {testModalRule.custom_email || "System Default"}
                   </code>
                 </p>
                 <p>
@@ -1255,7 +1255,7 @@ export function AlertRulesView() {
                     type="text"
                     value={formTargetId}
                     onChange={(e) => setFormTargetId(e.target.value)}
-                    placeholder="628123456789"
+                    placeholder="e.g. 628xxxxxxxx"
                     className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs font-mono"
                   />
                 </div>

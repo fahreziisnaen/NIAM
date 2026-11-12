@@ -186,20 +186,20 @@ export function Footer() {
             <div className="space-y-3 text-xs text-slate-700">
               <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/80 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">24/7 IT NOC Operations Hotline</span>
-                  <a href="tel:+85222776688" className="font-mono font-bold text-blue-600 hover:underline">
-                    +852 2277 6688
-                  </a>
+                  <span className="font-bold text-slate-800">Support Operations Hotline</span>
+                  <span className="font-mono font-bold text-blue-600">
+                    —
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">Emergency NOC Email</span>
-                  <a href="mailto:noc@phillip.com.hk" className="text-blue-600 hover:underline font-mono">
-                    noc@phillip.com.hk
-                  </a>
+                  <span className="font-bold text-slate-800">Emergency Support Email</span>
+                  <span className="text-blue-600 font-mono">
+                    noc@internal.local
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800">Datacenter Escalation</span>
-                  <span className="font-mono text-slate-900">+852 2277 6699 (Ext 401)</span>
+                  <span className="font-mono text-slate-900">—</span>
                 </div>
               </div>
 
@@ -207,7 +207,7 @@ export function Footer() {
                 <div className="flex items-start space-x-2">
                   <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <span>
-                    11/F & 12/F, United Centre, 95 Queensway, Admiralty, Hong Kong
+                    Primary Network Operations & Datacenter Facility
                   </span>
                 </div>
                 <div className="flex items-start space-x-2">

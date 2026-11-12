@@ -37,9 +37,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
 
   // Quick fill accounts for testing
   const demoAccounts = [
-    { username: "admin", label: "Super Admin (Fahrezi Fauzan)", role: "SUPER_ADMIN" },
-    { username: "netadmin", label: "Network Admin (John Zhang)", role: "NETWORK_ADMIN" },
-    { username: "assetmgr", label: "Asset Manager (Kelvin Chan)", role: "ASSET_MANAGER" },
+    { username: "admin", label: "Super Admin", role: "SUPER_ADMIN" },
+    { username: "netadmin", label: "Network Admin", role: "NETWORK_ADMIN" },
+    { username: "assetmgr", label: "Asset Manager", role: "ASSET_MANAGER" },
   ];
 
   const handleQuickFill = (uname: string) => {

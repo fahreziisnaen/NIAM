@@ -45,10 +45,10 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
   const [ticketNum, setTicketNum] = useState("");
   const [assetId, setAssetId] = useState(1);
   const [maintenanceType, setMaintenanceType] = useState("Preventive Maintenance");
-  const [technician, setTechnician] = useState("Kelvin Chan (Field Ops)");
-  const [scheduledDate, setScheduledDate] = useState("2026-03-15");
+  const [technician, setTechnician] = useState("");
+  const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().split("T")[0]);
   const [description, setDescription] = useState("");
-  const [cost, setCost] = useState(4500);
+  const [cost, setCost] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -106,7 +106,7 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
           status: "Scheduled",
           scheduled_date: scheduledDate ? `${scheduledDate}T10:00:00` : undefined,
           technician: technician.trim(),
-          description: description.trim() || "Scheduled preventive maintenance & optics check",
+          description: description.trim(),
           cost: Number(cost),
         }),
       });
@@ -452,7 +452,7 @@ export function MaintenanceView({ onSelectAsset }: MaintenanceViewProps = {}) {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-semibold">Servicing Vendor</span>
-                    <span className="font-semibold text-slate-800 mt-0.5 block">{selectedRecord.vendor_name || "Internal NOC"}</span>
+                    <span className="font-semibold text-slate-800 mt-0.5 block">{selectedRecord.vendor_name || "—"}</span>
                   </div>
                 </div>
               </div>

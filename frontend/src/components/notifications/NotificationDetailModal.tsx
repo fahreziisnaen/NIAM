@@ -51,9 +51,9 @@ export function NotificationDetailModal({
 
   const [apiEndpoint, setApiEndpoint] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [targetId, setTargetId] = useState("628123456789");
-  const [fromSender, setFromSender] = useState("respon");
-  const [emailTo, setEmailTo] = useState("noc@phillip.com.hk");
+  const [targetId, setTargetId] = useState("");
+  const [fromSender, setFromSender] = useState("");
+  const [emailTo, setEmailTo] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [showAdvancedApi, setShowAdvancedApi] = useState(false);
 
@@ -76,13 +76,13 @@ export function NotificationDetailModal({
         .then((res) => res.json())
         .then((cfg) => {
           if (cfg) {
-            setApiEndpoint(cfg.api_endpoint || "https://api.gateway.internal/v1/send-message");
-            setApiKey(cfg.api_key || "PHILLIP_SEC_API_KEY_2026");
-            setTargetId(cfg.default_target_id || "628123456789");
-            setFromSender(cfg.default_from_sender || "respon");
-            setEmailTo(cfg.default_email_to || "noc@phillip.com.hk");
+            setApiEndpoint(cfg.api_endpoint || "");
+            setApiKey(cfg.api_key || "");
+            setTargetId(cfg.default_target_id || "");
+            setFromSender(cfg.default_from_sender || "");
+            setEmailTo(cfg.default_email_to || "");
             setSendChannels({
-              api: cfg.enable_api_dispatch ?? true,
+              api: cfg.enable_api_dispatch ?? false,
               email: cfg.enable_email_dispatch ?? true,
             });
           }
@@ -369,7 +369,7 @@ export function NotificationDetailModal({
                         type="text"
                         value={targetId}
                         onChange={(e) => setTargetId(e.target.value)}
-                        placeholder="e.g. 628123456789"
+                        placeholder="e.g. 628xxxxxxxx"
                         className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500/20"
                         required={sendChannels.api}
                       />
@@ -400,7 +400,7 @@ export function NotificationDetailModal({
                           type="text"
                           value={apiEndpoint}
                           onChange={(e) => setApiEndpoint(e.target.value)}
-                          placeholder="https://api.gateway.com/send"
+                          placeholder="https://api.your-gateway.com/send"
                           className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-[11px]"
                         />
                       </div>

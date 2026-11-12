@@ -23,8 +23,8 @@ class SendAlertRequest(BaseModel):
     # External API / WhatsApp Gateway parameters
     api_endpoint: Optional[str] = None
     api_key: Optional[str] = None
-    target_id: Optional[str] = "628123456789"
-    from_sender: Optional[str] = "respon"
+    target_id: Optional[str] = None
+    from_sender: Optional[str] = None
     # Email parameters
     email_to: Optional[str] = None
     subject: Optional[str] = None
@@ -47,17 +47,17 @@ def get_or_create_settings(db: Session) -> AlertSetting:
     setting = db.query(AlertSetting).first()
     if not setting:
         setting = AlertSetting(
-            api_endpoint="https://api.gateway.com/send",
-            api_key="API_KEY_ANDA",
-            target_id="628123456789",
-            from_sender="respon",
-            api_enabled=True,
-            email_recipients="noc@phillip.com.hk, infrastructure-team@phillip.com.hk",
-            smtp_host="smtp.phillip.com.hk",
+            api_endpoint="",
+            api_key="",
+            target_id="",
+            from_sender="",
+            api_enabled=False,
+            email_recipients="",
+            smtp_host="",
             smtp_port=587,
-            smtp_user="noc-alerts@phillip.com.hk",
-            smtp_from="noc-alerts@phillip.com.hk",
-            email_enabled=True,
+            smtp_user="",
+            smtp_from="",
+            email_enabled=False,
         )
         db.add(setting)
         db.commit()
@@ -245,10 +245,10 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
                 "detail": "API Webhook / WhatsApp gateway channel is currently DEACTIVATED in system settings. Dispatch skipped."
             })
         else:
-            endpoint = req.api_endpoint or settings.api_endpoint or "https://api.gateway.com/send"
-            api_key = req.api_key or settings.api_key or "API_KEY_ANDA"
-            target_id = req.target_id or settings.target_id or "628123456789"
-            from_sender = req.from_sender or settings.from_sender or "respon"
+            endpoint = req.api_endpoint or settings.api_endpoint or ""
+            api_key = req.api_key or settings.api_key or ""
+            target_id = req.target_id or settings.target_id or ""
+            from_sender = req.from_sender or settings.from_sender or ""
 
             # Exact JSON payload requested by user:
             api_body = {
@@ -313,7 +313,7 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
                 "detail": "NOC Email Relay channel is currently DEACTIVATED in system settings. Dispatch skipped."
             })
         else:
-            email_recipients = req.email_to or settings.email_recipients or "noc@phillip.com.hk"
+            email_recipients = req.email_to or settings.email_recipients or ""
             email_subject = req.subject or f"[Phillip Securities NOC Alert] {req.title or 'Asset Infrastructure Alert'}"
 
         email_status = "SUCCESS"

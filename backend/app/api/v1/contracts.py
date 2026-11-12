@@ -119,7 +119,7 @@ def list_available_assets_for_contract(
         "vendor": a.vendor.name if a.vendor else a.manufacturer,
         "manufacturer": a.manufacturer,
         "serial_number": a.serial_number,
-        "location": a.location_display or "Central HQ",
+        "location": a.location_display or "",
         "status": a.operational_status,
         "ownership": a.ownership_type
     } for a in assets]
@@ -138,14 +138,14 @@ def get_contract_detail(contract_id: int, db: Session = Depends(get_db)):
                 "id": a.id,
                 "asset_id": a.asset_id,
                 "hostname": a.hostname,
-                "model": a.model.model_name if a.model else "Device",
+                "model": a.model.model_name if a.model else (a.device_name or "Device"),
                 "vendor": a.vendor.name if a.vendor else a.manufacturer,
                 "manufacturer": a.manufacturer,
                 "serial_number": a.serial_number,
-                "location": a.location_display or "Central HQ",
+                "location": a.location_display or "",
                 "status": a.operational_status,
                 "ownership": a.ownership_type,
-                "coverage_notes": assoc.coverage_notes or "Active Coverage"
+                "coverage_notes": assoc.coverage_notes or ""
             })
 
     days_left = (contract.end_date - date.today()).days
@@ -189,14 +189,14 @@ def create_contract(
         contract_name=contract_in.contract_name.strip(),
         contract_type=contract_in.contract_type.strip(),
         vendor_id=contract_in.vendor_id,
-        contract_owner=contract_in.contract_owner or "IT Infrastructure Team",
+        contract_owner=contract_in.contract_owner or "",
         start_date=contract_in.start_date,
         end_date=contract_in.end_date,
         contract_value=contract_in.contract_value or 0.0,
         currency=contract_in.currency or "HKD",
-        payment_terms=contract_in.payment_terms or "Annual Advance / Net 30",
-        sla=contract_in.sla or "24x7x4hr On-site Response",
-        support_level=contract_in.support_level or "Enterprise Support",
+        payment_terms=contract_in.payment_terms or "",
+        sla=contract_in.sla or "",
+        support_level=contract_in.support_level or "",
         renewal_terms=contract_in.renewal_terms,
         status=contract_in.status or "Active",
         document_url=contract_in.document_url,

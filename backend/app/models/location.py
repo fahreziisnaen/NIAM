@@ -51,8 +51,8 @@ class Rack(Base):
     rack_number = Column(String(50), nullable=True)
     room = Column(String(100), default="Server Room")  # Main Server Hall, MDF Room, IDF Closet
     total_u = Column(Integer, default=42)  # 42U rack
-    power_feed = Column(String(50), default="Dual A+B Redundant (32A)")
-    max_power_kw = Column(String(20), default="10kW")
+    power_feed = Column(String(50), default="", nullable=True)
+    max_power_kw = Column(String(20), default="", nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     floor = relationship("Floor", back_populates="racks")

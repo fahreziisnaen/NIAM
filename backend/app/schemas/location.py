@@ -8,10 +8,10 @@ from datetime import datetime
 class RackBase(BaseModel):
     rack_name: str
     rack_number: Optional[str] = None
-    room: Optional[str] = "Main Server Hall"
+    room: Optional[str] = None
     total_u: Optional[int] = 42
-    power_feed: Optional[str] = "Dual A+B Redundant (32A)"
-    max_power_kw: Optional[str] = "10kW"
+    power_feed: Optional[str] = None
+    max_power_kw: Optional[str] = None
     floor_id: Optional[int] = None
 
 class RackCreate(RackBase):
