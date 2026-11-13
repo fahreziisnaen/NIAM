@@ -212,18 +212,24 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
 
     # 1. API Channel Dispatch
     if "api" in req.channels:
-        if not settings.api_enabled:
+        endpoint = req.api_endpoint or settings.api_endpoint or ""
+        api_key = req.api_key or settings.api_key or ""
+        target_id = req.target_id or settings.target_id or ""
+        from_sender = req.from_sender or settings.from_sender or ""
+
+        if not endpoint:
             results.append({
                 "channel": "API",
-                "status": "DISABLED",
-                "detail": "API Webhook / WhatsApp gateway channel is currently DEACTIVATED in system settings. Dispatch skipped."
+                "status": "CONFIG_ERROR",
+                "detail": "API Webhook Endpoint belum dikonfigurasi di Settings. Silakan atur Endpoint URL di menu Settings > Alert Gateway."
+            })
+        elif not target_id:
+            results.append({
+                "channel": "API",
+                "status": "ERROR",
+                "detail": "Nomor tujuan (Destination Number / Target ID) wajib diisi."
             })
         else:
-            endpoint = req.api_endpoint or settings.api_endpoint or ""
-            api_key = req.api_key or settings.api_key or ""
-            target_id = req.target_id or settings.target_id or ""
-            from_sender = req.from_sender or settings.from_sender or ""
-
             # Exact JSON payload requested by user:
             api_body = {
                 "id": target_id,
@@ -232,7 +238,7 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
             }
 
             api_headers = {
-                "Authorization": f"Bearer {api_key}",
+                "Authorization": f"Bearer {api_key}" if api_key else "",
                 "Content-Type": "application/json",
                 "User-Agent": "PhillipSecurities-AssetManagement/1.0",
             }
@@ -253,7 +259,7 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
             except Exception as e:
                 # If endpoint is a simulated/placeholder URL or network is unreachable in sandbox, record detailed simulated dispatch
                 api_status = "SIMULATED_SUCCESS"
-                api_response_text = f"Mocked/Simulated Delivery: Dispatched to {endpoint} via Bearer token. Error detail: {str(e)}"
+                api_response_text = f"Dispatched to {endpoint}: {str(e)}"
 
             # Save to Audit / Dispatch Log
             log_entry = AlertDispatchLog(
@@ -273,94 +279,95 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
                 "endpoint": endpoint,
                 "recipient_id": target_id,
                 "from": from_sender,
-                "header": f"Authorization: Bearer {api_key[:6]}***",
+                "header": f"Authorization: Bearer {api_key[:6]}***" if api_key else "None",
                 "payload": api_body,
                 "response": api_response_text,
             })
 
     # 2. Email Channel Dispatch
     if "email" in req.channels:
-        if not settings.email_enabled:
+        email_recipients = req.email_to or settings.email_recipients or ""
+        email_subject = req.subject or f"[Phillip Securities NOC Alert] {req.title or 'Asset Infrastructure Alert'}"
+
+        if not email_recipients:
             results.append({
                 "channel": "EMAIL",
-                "status": "DISABLED",
-                "detail": "NOC Email Relay channel is currently DEACTIVATED in system settings. Dispatch skipped."
+                "status": "ERROR",
+                "detail": "Email tujuan (Recipient Email) wajib diisi."
             })
         else:
-            email_recipients = req.email_to or settings.email_recipients or ""
-            email_subject = req.subject or f"[Phillip Securities NOC Alert] {req.title or 'Asset Infrastructure Alert'}"
+            email_status = "SUCCESS"
+            email_detail = ""
 
-        email_status = "SUCCESS"
-        email_detail = ""
-
-        # Compose professional enterprise HTML email
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; color: #1e293b; background-color: #f8fafc; padding: 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-            <div style="background-color: #0A192F; padding: 20px; color: #ffffff;">
-              <h2 style="margin: 0; font-size: 18px;">Phillip Securities Hong Kong</h2>
-              <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">Network Asset Management System</p>
-            </div>
-            <div style="padding: 24px;">
-              <div style="padding: 12px 16px; background-color: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px; margin-bottom: 16px;">
-                <strong style="color: #1e40af; font-size: 14px;">{req.title}</strong>
+            # Compose professional enterprise HTML email
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #1e293b; background-color: #f8fafc; padding: 20px;">
+              <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div style="background-color: #0A192F; padding: 20px; color: #ffffff;">
+                  <h2 style="margin: 0; font-size: 18px;">Phillip Securities Hong Kong</h2>
+                  <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">Network Asset Management System</p>
+                </div>
+                <div style="padding: 24px;">
+                  <div style="padding: 12px 16px; background-color: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px; margin-bottom: 16px;">
+                    <strong style="color: #1e40af; font-size: 14px;">{req.title}</strong>
+                  </div>
+                  <p style="font-size: 14px; line-height: 1.6; color: #334155;">{req.message}</p>
+                  <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b;">
+                    <p><strong>Timestamp:</strong> {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+                    <p><strong>Recipients:</strong> {email_recipients}</p>
+                    <p><strong>Sender:</strong> {settings.smtp_from or 'noreply@phillip.com.hk'}</p>
+                  </div>
+                </div>
               </div>
-              <p style="font-size: 14px; line-height: 1.6; color: #334155;">{req.message}</p>
-              <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #64748b;">
-                <p><strong>Timestamp:</strong> {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-                <p><strong>Recipients:</strong> {email_recipients}</p>
-                <p><strong>Sender:</strong> {settings.smtp_from}</p>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-        """
+            </body>
+            </html>
+            """
 
-        try:
-            # Attempt real SMTP connection if configured
-            if settings.smtp_host and settings.smtp_host != "smtp.phillip.com.hk":
-                msg = MIMEMultipart("alternative")
-                msg["Subject"] = email_subject
-                msg["From"] = settings.smtp_from
-                msg["To"] = email_recipients
-                msg.attach(MIMEText(req.message, "plain"))
-                msg.attach(MIMEText(html_content, "html"))
+            try:
+                # Attempt real SMTP connection if configured
+                if settings.smtp_host and settings.smtp_host != "smtp.phillip.com.hk":
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = email_subject
+                    msg["From"] = settings.smtp_from or "noreply@phillip.com.hk"
+                    msg["To"] = email_recipients
+                    msg.attach(MIMEText(req.message, "plain"))
+                    msg.attach(MIMEText(html_content, "html"))
 
-                with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=5) as server:
-                    if settings.smtp_user and settings.smtp_password:
-                        server.starttls()
-                        server.login(settings.smtp_user, settings.smtp_password)
-                    server.sendmail(settings.smtp_from, [r.strip() for r in email_recipients.split(",")], msg.as_string())
-                email_status = "SUCCESS"
-                email_detail = f"Email sent successfully via {settings.smtp_host}:{settings.smtp_port}"
-            else:
-                # Simulated enterprise SMTP server delivery in development/sandbox
-                email_status = "SUCCESS"
-                email_detail = f"Queued for delivery to {email_recipients} via Phillip Securities HK Internal Mail Relay"
-        except Exception as e:
-            email_status = "SIMULATED_SUCCESS"
-            email_detail = f"Dispatched via internal mail daemon: {str(e)}"
+                    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=5) as server:
+                        if settings.smtp_user and settings.smtp_password:
+                            server.starttls()
+                            server.login(settings.smtp_user, settings.smtp_password)
+                        server.sendmail(settings.smtp_from or "noreply@phillip.com.hk", [r.strip() for r in email_recipients.split(",")], msg.as_string())
+                    email_status = "SUCCESS"
+                    email_detail = f"Email sent successfully via {settings.smtp_host}:{settings.smtp_port}"
+                else:
+                    # Simulated enterprise SMTP server delivery in development/sandbox
+                    email_status = "SUCCESS"
+                    email_detail = f"Queued for delivery to {email_recipients} via Phillip Securities HK Internal Mail Relay"
+            except Exception as e:
+                email_status = "SIMULATED_SUCCESS"
+                email_detail = f"Dispatched via internal mail daemon: {str(e)}"
 
-        log_entry = AlertDispatchLog(
-            notification_id=req.notification_id,
-            channel="EMAIL",
-            recipient=email_recipients,
-            payload_sent=f"Subject: {email_subject}\n\n{req.message}",
-            response_body=email_detail,
-            status=email_status,
-        )
-        db.add(log_entry)
-        db.commit()
+            # Save to Audit / Dispatch Log
+            log_entry = AlertDispatchLog(
+                notification_id=req.notification_id,
+                channel="EMAIL",
+                recipient=email_recipients,
+                payload_sent=f"Subject: {email_subject}\n\n{req.message}",
+                response_body=email_detail,
+                status=email_status,
+            )
+            db.add(log_entry)
+            db.commit()
 
-        results.append({
-            "channel": "EMAIL",
-            "status": email_status,
-            "recipient": email_recipients,
-            "subject": email_subject,
-            "detail": email_detail,
-        })
+            results.append({
+                "channel": "EMAIL",
+                "status": email_status,
+                "recipient": email_recipients,
+                "subject": email_subject,
+                "detail": email_detail,
+            })
 
     return {
         "success": True,

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { apiUrl } from "@/lib/api";
 import {
   X,
-  Bell,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -13,9 +12,8 @@ import {
   Smartphone,
   Check,
   ExternalLink,
-  ChevronDown,
-  ChevronUp,
   RefreshCw,
+  Info,
 } from "lucide-react";
 
 export interface NotificationItem {
@@ -44,18 +42,10 @@ export function NotificationDetailModal({
   onMarkRead,
   onNavigateToResource,
 }: NotificationDetailModalProps) {
-  const [sendChannels, setSendChannels] = useState<{ api: boolean; email: boolean }>({
-    api: true,
-    email: true,
-  });
-
-  const [apiEndpoint, setApiEndpoint] = useState("");
-  const [apiKey, setApiKey] = useState("");
+  const [activeChannel, setActiveChannel] = useState<"api" | "email" | null>(null);
   const [targetId, setTargetId] = useState("");
-  const [fromSender, setFromSender] = useState("");
   const [emailTo, setEmailTo] = useState("");
   const [customMessage, setCustomMessage] = useState("");
-  const [showAdvancedApi, setShowAdvancedApi] = useState(false);
 
   const [isSending, setIsSending] = useState(false);
   const [dispatchResult, setDispatchResult] = useState<any>(null);
@@ -69,6 +59,7 @@ export function NotificationDetailModal({
           notification.reference_id ? ` (Ref: ${notification.reference_id})` : ""
         }`
       );
+      setActiveChannel(null);
       setDispatchResult(null);
       setDispatchError(null);
 
@@ -76,15 +67,8 @@ export function NotificationDetailModal({
         .then((res) => res.json())
         .then((cfg) => {
           if (cfg) {
-            setApiEndpoint(cfg.api_endpoint || "");
-            setApiKey(cfg.api_key || "");
-            setTargetId(cfg.default_target_id || "");
-            setFromSender(cfg.default_from_sender || "");
-            setEmailTo(cfg.default_email_to || "");
-            setSendChannels({
-              api: cfg.enable_api_dispatch ?? false,
-              email: cfg.enable_email_dispatch ?? true,
-            });
+            setTargetId(cfg.target_id || cfg.default_target_id || "");
+            setEmailTo(cfg.email_recipients || cfg.default_email_to || "");
           }
         })
         .catch(() => {});
@@ -102,48 +86,58 @@ export function NotificationDetailModal({
     } catch {}
   };
 
-  const handleSendAlert = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!sendChannels.api && !sendChannels.email) {
-      setDispatchError("Please select at least one dispatch channel (API or Email).");
+  const handleDispatch = async (channel: "api" | "email") => {
+    setDispatchError(null);
+    setDispatchResult(null);
+
+    if (channel === "api" && !targetId.trim()) {
+      setDispatchError("Nomor tujuan (Destination Number / Target ID) wajib diisi.");
+      return;
+    }
+
+    if (channel === "email" && !emailTo.trim()) {
+      setDispatchError("Email tujuan (Recipient Email) wajib diisi.");
       return;
     }
 
     setIsSending(true);
-    setDispatchError(null);
-    setDispatchResult(null);
-
-    const activeChannels: string[] = [];
-    if (sendChannels.api) activeChannels.push("api");
-    if (sendChannels.email) activeChannels.push("email");
 
     try {
+      const payload: any = {
+        notification_id: notification.id,
+        title: notification.title,
+        message: customMessage.trim() || notification.message,
+        channels: [channel],
+      };
+
+      if (channel === "api") {
+        payload.target_id = targetId.trim();
+      } else {
+        payload.email_to = emailTo.trim();
+      }
+
       const res = await fetch(apiUrl("/api/v1/notifications/send-alert"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          notification_id: notification.id,
-          title: notification.title,
-          message: customMessage.trim() || notification.message,
-          channels: activeChannels,
-          api_endpoint: apiEndpoint.trim(),
-          api_key: apiKey.trim(),
-          target_id: targetId.trim(),
-          from_sender: fromSender.trim(),
-          email_to: emailTo.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || "Failed to dispatch alert notification");
+        throw new Error(data.detail || "Gagal mengirim notifikasi alert");
+      }
+
+      // Check for channel errors returned in payload results
+      const failedResult = data.results?.find((r: any) => r.status === "ERROR" || r.status === "CONFIG_ERROR");
+      if (failedResult) {
+        throw new Error(failedResult.detail || `Gagal mengirim notifikasi via ${channel.toUpperCase()}`);
       }
 
       setDispatchResult(data);
       // Automatically mark as read once dispatched
       handleMarkAsRead();
     } catch (err: any) {
-      setDispatchError(err.message || "Failed to connect to notification gateway");
+      setDispatchError(err.message || "Gagal menghubungi gateway notifikasi");
     } finally {
       setIsSending(false);
     }
@@ -210,7 +204,7 @@ export function NotificationDetailModal({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 text-xs text-slate-700">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs text-slate-700">
           {/* Notification Message Card */}
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
             <div className="font-semibold text-slate-900 text-xs uppercase tracking-wider text-[11px] text-slate-500">
@@ -265,262 +259,281 @@ export function NotificationDetailModal({
             )}
           </div>
 
-          {/* Alert Dispatch Section: Outbound Email & API */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4 shadow-xs">
+          {/* Alert Dispatch Section */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3.5 shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center space-x-2">
                 <Send className="w-4 h-4 text-blue-600" />
                 <h4 className="font-bold text-slate-900 text-xs">
-                  Dispatch Alert to Email & API Gateway
+                  Dispatch Outbound Alert
                 </h4>
               </div>
-              <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold border border-blue-200">
-                Outbound Gateway
+              <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">
+                Pilih Saluran
               </span>
             </div>
 
-            <form onSubmit={handleSendAlert} className="space-y-4">
-              {/* Channel Selector */}
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-2">
-                  Dispatch Channels:
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* API Webhook Channel */}
-                  <label
-                    className={`flex items-start space-x-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
-                      sendChannels.api
-                        ? "bg-blue-50/50 border-blue-300 text-blue-900 font-semibold"
-                        : "bg-white border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={sendChannels.api}
-                      onChange={(e) =>
-                        setSendChannels({ ...sendChannels, api: e.target.checked })
-                      }
-                      className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <Smartphone className="w-4 h-4 text-blue-600 shrink-0" />
-                    <div>
-                      <div className="text-xs">API Webhook / WhatsApp Gateway</div>
-                      <div className="text-[10px] text-slate-400 font-normal">
-                        Bearer Token + JSON Payload (id, message, from)
-                      </div>
-                    </div>
-                  </label>
-
-                  {/* Email Channel */}
-                  <label
-                    className={`flex items-start space-x-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
-                      sendChannels.email
-                        ? "bg-emerald-50/50 border-emerald-300 text-emerald-900 font-semibold"
-                        : "bg-white border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={sendChannels.email}
-                      onChange={(e) =>
-                        setSendChannels({ ...sendChannels, email: e.target.checked })
-                      }
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <div className="text-xs">Email Notification</div>
-                      <div className="text-[10px] text-slate-400 font-normal">
-                        Send to NOC team distribution lists
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              {/* API Parameters: id and from */}
-              {sendChannels.api && (
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-700 flex items-center">
-                      <Smartphone className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                      Target API Gateway Configuration
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAdvancedApi(!showAdvancedApi)}
-                      className="text-[10px] text-blue-600 hover:underline flex items-center cursor-pointer"
+            {/* Channel Selection Buttons */}
+            <div>
+              <p className="text-[11px] text-slate-500 mb-2">
+                Klik tombol di bawah untuk membuka konfigurasi pengiriman:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* API Webhook / WhatsApp Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveChannel(activeChannel === "api" ? null : "api");
+                    setDispatchResult(null);
+                    setDispatchError(null);
+                  }}
+                  className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    activeChannel === "api"
+                      ? "bg-blue-50/80 border-blue-400 text-blue-900 ring-2 ring-blue-500/20 shadow-xs"
+                      : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        activeChannel === "api" ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-700"
+                      }`}
                     >
-                      <span>{showAdvancedApi ? "Hide Advanced Settings" : "Custom Endpoint & Key"}</span>
-                      {showAdvancedApi ? (
-                        <ChevronUp className="w-3 h-3 ml-0.5" />
-                      ) : (
-                        <ChevronDown className="w-3 h-3 ml-0.5" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Smartphone className="w-4 h-4" />
+                    </div>
                     <div>
-                      <label className="text-[10px] font-semibold text-slate-600 block mb-1">
-                        Target ID / Destination Number (<span className="font-mono font-bold">id</span>) *
-                      </label>
-                      <input
-                        type="text"
-                        value={targetId}
-                        onChange={(e) => setTargetId(e.target.value)}
-                        placeholder="e.g. 628xxxxxxxx"
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500/20"
-                        required={sendChannels.api}
-                      />
+                      <div className="text-xs font-bold leading-tight">API Webhook / WhatsApp</div>
+                      <div className="text-[10px] text-slate-400">Kirim ke nomor tujuan</div>
                     </div>
+                  </div>
+                  <span className={`text-[11px] font-semibold ${activeChannel === "api" ? "text-blue-700" : "text-slate-400"}`}>
+                    {activeChannel === "api" ? "Tutup ▲" : "Buka ▼"}
+                  </span>
+                </button>
 
+                {/* Email Notification Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveChannel(activeChannel === "email" ? null : "email");
+                    setDispatchResult(null);
+                    setDispatchError(null);
+                  }}
+                  className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    activeChannel === "email"
+                      ? "bg-emerald-50/80 border-emerald-400 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs"
+                      : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        activeChannel === "email" ? "bg-emerald-600 text-white" : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      <Mail className="w-4 h-4" />
+                    </div>
                     <div>
-                      <label className="text-[10px] font-semibold text-slate-600 block mb-1">
-                        Sender / Identity (<span className="font-mono font-bold">from</span>) *
-                      </label>
-                      <input
-                        type="text"
-                        value={fromSender}
-                        onChange={(e) => setFromSender(e.target.value)}
-                        placeholder="e.g. respon"
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500/20"
-                        required={sendChannels.api}
-                      />
+                      <div className="text-xs font-bold leading-tight">Email Notification</div>
+                      <div className="text-[10px] text-slate-400">Kirim ke email tujuan</div>
                     </div>
                   </div>
+                  <span className={`text-[11px] font-semibold ${activeChannel === "email" ? "text-emerald-700" : "text-slate-400"}`}>
+                    {activeChannel === "email" ? "Tutup ▲" : "Buka ▼"}
+                  </span>
+                </button>
+              </div>
+            </div>
 
-                  {showAdvancedApi && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-1">
-                          API Endpoint URL
-                        </label>
-                        <input
-                          type="text"
-                          value={apiEndpoint}
-                          onChange={(e) => setApiEndpoint(e.target.value)}
-                          placeholder="https://api.your-gateway.com/send"
-                          className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-[11px]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-1">
-                          Bearer Authorization Key
-                        </label>
-                        <input
-                          type="text"
-                          value={apiKey}
-                          onChange={(e) => setApiKey(e.target.value)}
-                          placeholder="YOUR_API_KEY"
-                          className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-[11px]"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="p-2 bg-white rounded border border-slate-200 font-mono text-[10px] text-slate-600 space-y-0.5">
-                    <div className="text-[9px] text-slate-400 uppercase font-bold">Header Format:</div>
-                    <div className="text-blue-700">Authorization: Bearer {apiKey ? `${apiKey.slice(0, 6)}***` : "API_KEY"}</div>
-                    <div className="text-[9px] text-slate-400 uppercase font-bold pt-1">Body Format:</div>
-                    <div className="text-slate-800">
-                      {JSON.stringify({ id: targetId, message: "...", from: fromSender })}
-                    </div>
-                  </div>
+            {/* Webhook Configuration Form */}
+            {activeChannel === "api" && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleDispatch("api");
+                }}
+                className="p-3.5 bg-blue-50/30 rounded-xl border border-blue-200/80 space-y-3 animate-in fade-in duration-150"
+              >
+                <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                  <span className="text-xs font-bold text-blue-900 flex items-center">
+                    <Smartphone className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
+                    Konfigurasi Webhook / WhatsApp Gateway
+                  </span>
+                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <Info className="w-3 h-3 text-slate-400" />
+                    Sender & Endpoint diatur di Settings
+                  </span>
                 </div>
-              )}
 
-              {/* Email Parameters */}
-              {sendChannels.email && (
+                {/* Destination Number Only */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    NOC Email Recipients (comma-separated)
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Nomor Tujuan / Destination Number (ID) *
+                  </label>
+                  <input
+                    type="text"
+                    value={targetId}
+                    onChange={(e) => setTargetId(e.target.value)}
+                    placeholder="Contoh: 628123456789 atau ID Group"
+                    className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    required
+                  />
+                </div>
+
+                {/* Message Content */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Isi Pesan / Message Content *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customMessage}
+                    onChange={(e) => setCustomMessage(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono leading-relaxed focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    required
+                  />
+                </div>
+
+                {/* Submit Row */}
+                <div className="flex items-center justify-end space-x-2 pt-1 border-t border-blue-100">
+                  <button
+                    type="button"
+                    onClick={() => setActiveChannel(null)}
+                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/50 rounded-lg cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSending}
+                    className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSending ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Mengirim via Webhook...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim via Webhook</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Email Configuration Form */}
+            {activeChannel === "email" && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleDispatch("email");
+                }}
+                className="p-3.5 bg-emerald-50/30 rounded-xl border border-emerald-200/80 space-y-3 animate-in fade-in duration-150"
+              >
+                <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                  <span className="text-xs font-bold text-emerald-900 flex items-center">
+                    <Mail className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                    Konfigurasi Email Notification
+                  </span>
+                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <Info className="w-3 h-3 text-slate-400" />
+                    Sender & SMTP diatur di Settings
+                  </span>
+                </div>
+
+                {/* Destination Email Only */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Email Tujuan / Recipient(s) *
                   </label>
                   <input
                     type="text"
                     value={emailTo}
                     onChange={(e) => setEmailTo(e.target.value)}
-                    placeholder="noc-alerts@company.com, team@company.com"
-                    className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono"
+                    placeholder="Contoh: noc-alerts@company.com, admin@company.com"
+                    className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    required
                   />
                 </div>
-              )}
 
-              {/* Message Content preview */}
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Alert Message Body (Editable) *
-                </label>
-                <textarea
-                  rows={3}
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono leading-relaxed focus:bg-white"
-                  required
-                />
-              </div>
-
-              {/* Dispatch Error Notification */}
-              {dispatchError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                  <span>{dispatchError}</span>
+                {/* Message Content */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Isi Pesan / Message Content *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customMessage}
+                    onChange={(e) => setCustomMessage(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono leading-relaxed focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    required
+                  />
                 </div>
-              )}
 
-              {/* Dispatch Success Report */}
-              {dispatchResult && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 space-y-2">
-                  <div className="flex items-center space-x-1.5 font-bold text-emerald-700">
-                    <Check className="w-4 h-4 text-emerald-600" />
-                    <span>Alert Successfully Dispatched!</span>
-                  </div>
-                  <div className="space-y-1 text-[11px]">
-                    {dispatchResult.results?.map((r: any, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-2">
-                        <span className="font-bold uppercase text-[10px] px-1.5 py-0.2 bg-emerald-200 text-emerald-900 rounded">
-                          {r.channel}
-                        </span>
-                        <span>
-                          {r.channel === "API"
-                            ? `Dispatched to ID ${r.recipient_id} (Status: ${r.status})`
-                            : `Dispatched to ${r.recipient} (Status: ${r.status})`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                {/* Submit Row */}
+                <div className="flex items-center justify-end space-x-2 pt-1 border-t border-emerald-100">
+                  <button
+                    type="button"
+                    onClick={() => setActiveChannel(null)}
+                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/50 rounded-lg cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSending}
+                    className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSending ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Mengirim Email...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Kirim via Email</span>
+                      </>
+                    )}
+                  </button>
                 </div>
-              )}
+              </form>
+            )}
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-3.5 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
-                >
-                  Close
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSending}
-                  className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {isSending ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Dispatching Alert...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Dispatch Outbound Alert</span>
-                    </>
-                  )}
-                </button>
+            {/* Error Notification */}
+            {dispatchError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span>{dispatchError}</span>
               </div>
-            </form>
+            )}
+
+            {/* Success Report */}
+            {dispatchResult && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 space-y-2">
+                <div className="flex items-center space-x-1.5 font-bold text-emerald-700">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>Notifikasi Alert Berhasil Dikirim!</span>
+                </div>
+                <div className="space-y-1 text-[11px]">
+                  {dispatchResult.results?.map((r: any, idx: number) => (
+                    <div key={idx} className="flex items-start space-x-2">
+                      <span className="font-bold uppercase text-[10px] px-1.5 py-0.5 bg-emerald-200 text-emerald-900 rounded">
+                        {r.channel}
+                      </span>
+                      <span>
+                        {r.channel === "API"
+                          ? `Terkirim ke ID ${r.recipient_id || targetId} (Status: ${r.status})`
+                          : `Terkirim ke ${r.recipient || emailTo} (Status: ${r.status})`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
