@@ -41,7 +41,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
   const [vlans, setVlans] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [assignableAssets, setAssignableAssets] = useState<any[]>([]);
-  const [selectedSubnet, setSelectedSubnet] = useState<string>("10.200.100.0/24");
+  const [selectedSubnet, setSelectedSubnet] = useState<string>("");
   const [selectedVlanId, setSelectedVlanId] = useState<number | null>(null);
 
   // High-Scale VLAN Fleet Management State (Optimized for 100+ VLANs)
@@ -83,22 +83,22 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
 
   // VLAN Form
   const [vlanForm, setVlanForm] = useState({
-    vlan_id: 100,
+    vlan_id: 1,
     name: "",
-    subnet: "10.200.10.0/24",
-    gateway: "10.200.10.1",
+    subnet: "",
+    gateway: "",
     description: "",
   });
 
   // Single IP Form (Add / Edit)
   const [ipForm, setIpForm] = useState({
     ip_address: "",
-    subnet: "10.200.100.0/24",
+    subnet: "",
     vlan_id: 1,
     status: "Available",
     hostname: "",
     mac_address: "",
-    interface_name: "GigabitEthernet1/0/1",
+    interface_name: "",
     description: "",
   });
 
@@ -106,13 +106,13 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
   const [assignForm, setAssignForm] = useState({
     ip_address: "",
     asset_id: 1,
-    interface_name: "GigabitEthernet1/0/1",
+    interface_name: "",
   });
   const [assetSearch, setAssetSearch] = useState<string>("");
 
   // Batch Generation Form
   const [batchForm, setBatchForm] = useState({
-    subnet: "10.200.100.0/24",
+    subnet: "",
     vlan_id: 1,
     start_host: 1,
     end_host: 50,
@@ -198,10 +198,10 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
   const openAddVlan = () => {
     setEditingVlan(null);
     setVlanForm({
-      vlan_id: 100,
+      vlan_id: 1,
       name: "",
-      subnet: "10.200.10.0/24",
-      gateway: "10.200.10.1",
+      subnet: "",
+      gateway: "",
       description: "",
     });
     setVlanModalOpen(true);

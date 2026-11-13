@@ -282,7 +282,7 @@ def assign_ip_address(
         existing = IPAddress(
             ip_address=ip_address,
             ip_version="IPv4",
-            subnet="10.200.100.0/24",
+            subnet=asset.subnet or "",
             status="Assigned",
             asset_id=asset.id,
             hostname=asset.hostname,

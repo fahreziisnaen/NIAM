@@ -64,45 +64,19 @@ def get_or_create_settings(db: Session) -> AlertSetting:
         db.refresh(setting)
     return setting
 
-def seed_default_notifications(db: Session):
-    existing = db.query(Notification).count()
-    if existing == 0:
-        n1 = Notification(
-            title="Contract Expiration Alert",
-            message="Contract CT-2023-HKT-03 with HKT Enterprise Solutions expires in 28 days (05 Dec 2025). Please initiate renewal discussions or return arrangements.",
-            category="Contract Expiration",
-            severity="danger",
-            is_read=False,
-            reference_id="CT-2023-HKT-03",
-            reference_type="contract",
-            link_url="/contracts?id=CT-2023-HKT-03",
-        )
-        n2 = Notification(
-            title="Warranty Renewal Required",
-            message="Next-Gen Firewall FW-01-HK (Palo Alto PA-3220, SN: 8F3D1A00234) hardware warranty WAR-8F3D1A00 expires in 45 days. Vendor SLA renewal quote requested.",
-            category="Warranty Expiration",
-            severity="warning",
-            is_read=False,
-            reference_id="NA-000123",
-            reference_type="asset",
-            link_url="/assets?id=NA-000123",
-        )
-        n3 = Notification(
-            title="Preventive Maintenance Scheduled",
-            message="Field engineer dispatched for Huawei CloudEngine switch SW-02-HK optics inspection and firmware baseline patching.",
-            category="Maintenance",
-            severity="info",
-            is_read=False,
-            reference_id="MNT-2025-1002",
-            reference_type="maintenance",
-            link_url="/maintenance",
-        )
-        db.add_all([n1, n2, n3])
-        db.commit()
-
 @router.get("")
 def list_notifications(db: Session = Depends(get_db)):
-    seed_default_notifications(db)
+    # Auto-purge legacy mock/dump notifications if present in database
+    seed_demo = os.getenv("SEED_DEMO_DATA", "false").lower() in ["true", "1", "yes"]
+    if not seed_demo:
+        db.query(Notification).filter(
+            (Notification.reference_id.in_(["CT-2023-HKT-03", "NA-000123", "MNT-2025-1002"])) |
+            (Notification.message.ilike("%CT-2023-HKT-03%")) |
+            (Notification.message.ilike("%8F3D1A00234%")) |
+            (Notification.message.ilike("%SW-02-HK%"))
+        ).delete(synchronize_session=False)
+        db.commit()
+
     items = db.query(Notification).order_by(Notification.created_at.desc()).all()
     unread_count = db.query(Notification).filter(Notification.is_read == False).count()
     return {
@@ -115,9 +89,9 @@ def list_notifications(db: Session = Depends(get_db)):
                 "severity": n.severity,
                 "is_read": n.is_read,
                 "link_url": n.link_url,
-                "reference_id": n.reference_id or ("CT-2023-HKT-03" if "Contract" in n.title else "NA-000123"),
-                "reference_type": n.reference_type or ("contract" if "Contract" in n.title else "asset"),
-                "created_at": n.created_at.strftime("%Y-%m-%d %H:%M"),
+                "reference_id": n.reference_id or "",
+                "reference_type": n.reference_type or "",
+                "created_at": n.created_at.strftime("%Y-%m-%d %H:%M") if n.created_at else "",
             }
             for n in items
         ],

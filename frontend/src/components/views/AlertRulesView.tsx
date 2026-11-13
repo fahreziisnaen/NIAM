@@ -1281,7 +1281,7 @@ export function AlertRulesView() {
                     type="email"
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="noc@phillip.com.hk"
+                    placeholder="noc@example.com"
                     className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs font-mono"
                   />
                 </div>

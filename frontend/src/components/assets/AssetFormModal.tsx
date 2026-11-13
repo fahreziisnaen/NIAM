@@ -394,19 +394,9 @@ export function AssetFormModal({
                       name="rental_provider"
                       value={formData.rental_provider}
                       onChange={handleChange}
-                      list="distributor-options"
-                      placeholder="e.g. HKT Enterprise Solutions"
+                      placeholder="e.g. Equipment Rental Distributor"
                       className="w-full px-3 py-1.5 text-xs border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
                     />
-                    <datalist id="distributor-options">
-                      <option value="HKT Enterprise Solutions" />
-                      <option value="PCCW Solutions" />
-                      <option value="SiS Technologies HK" />
-                      <option value="Automated Systems HK (ASL)" />
-                      <option value="Synnex Technology HK" />
-                      <option value="Ingram Micro HK" />
-                      <option value="HKBN Enterprise Solutions" />
-                    </datalist>
                   </div>
                   <div>
                     <label className="text-[10px] font-semibold text-slate-700 block mb-1">
@@ -455,7 +445,7 @@ export function AssetFormModal({
                   name="management_ip"
                   value={formData.management_ip}
                   onChange={handleChange}
-                  placeholder="e.g. 10.200.10.45"
+                  placeholder="e.g. 192.168.1.50"
                   className="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg"
                 />
               </div>
@@ -466,7 +456,7 @@ export function AssetFormModal({
                   name="mac_address"
                   value={formData.mac_address}
                   onChange={handleChange}
-                  placeholder="e.g. 00:1B:17:XX:YY:ZZ"
+                  placeholder="e.g. AA:BB:CC:DD:EE:FF"
                   className="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg"
                 />
               </div>

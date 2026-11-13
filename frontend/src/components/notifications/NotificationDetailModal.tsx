@@ -440,7 +440,7 @@ export function NotificationDetailModal({
                     type="text"
                     value={emailTo}
                     onChange={(e) => setEmailTo(e.target.value)}
-                    placeholder="noc@phillip.com.hk, infrastructure-team@phillip.com.hk"
+                    placeholder="noc-alerts@company.com, team@company.com"
                     className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono"
                   />
                 </div>

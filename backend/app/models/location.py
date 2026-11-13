@@ -10,8 +10,8 @@ class Location(Base):
     code = Column(String(50), unique=True, nullable=False, index=True)  # HK-DC1, HK-DC2, HK-HQ, HK-ADM, HK-KLN, HK-DR
     name = Column(String(200), nullable=False)
     type = Column(String(50), default="Data Center")  # Data Center, Headquarters, Branch Office, Disaster Recovery Site, Network Room
-    country = Column(String(50), default="Hong Kong")
-    city = Column(String(50), default="Hong Kong")
+    country = Column(String(50), nullable=True)
+    city = Column(String(50), nullable=True)
     address = Column(Text, nullable=True)
     contact_person = Column(String(100), nullable=True)
     contact_phone = Column(String(50), nullable=True)

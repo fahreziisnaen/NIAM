@@ -100,12 +100,12 @@ class Asset(Base):
     location_display = Column(String(100), nullable=True)  # HK-DC1 / Rack A1
 
     # 7. Network Configuration
-    vlan = Column(String(50), default="VLAN 100")
-    subnet = Column(String(50), default="10.200.10.0/24")
-    default_gateway = Column(String(50), default="10.200.10.1")
-    network_segment = Column(String(100), default="Core Datacenter Backbone")
+    vlan = Column(String(50), nullable=True)
+    subnet = Column(String(50), nullable=True)
+    default_gateway = Column(String(50), nullable=True)
+    network_segment = Column(String(100), nullable=True)
     connected_device = Column(String(100), nullable=True)
-    uplink_port = Column(String(100), default="Te1/0/1")
+    uplink_port = Column(String(100), nullable=True)
     interface_info = Column(Text, nullable=True)
 
     # 8. Lifecycle

@@ -52,12 +52,12 @@ class AssetBase(BaseModel):
     rack_position: Optional[str] = None
     location_display: Optional[str] = None
     
-    vlan: Optional[str] = "VLAN 100"
-    subnet: Optional[str] = "10.200.10.0/24"
-    default_gateway: Optional[str] = "10.200.10.1"
-    network_segment: Optional[str] = "Core Datacenter Backbone"
+    vlan: Optional[str] = None
+    subnet: Optional[str] = None
+    default_gateway: Optional[str] = None
+    network_segment: Optional[str] = None
     connected_device: Optional[str] = None
-    uplink_port: Optional[str] = "Te1/0/1"
+    uplink_port: Optional[str] = None
     interface_info: Optional[str] = None
     
     acquisition_date: Optional[date] = None

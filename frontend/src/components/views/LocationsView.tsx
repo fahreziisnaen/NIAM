@@ -1483,7 +1483,7 @@ export function LocationsView({ initialSub = "sites", onSelectAsset }: Locations
                   <label className="block text-[10px] font-bold text-slate-500 mb-1">Email</label>
                   <input
                     type="email"
-                    placeholder="noc@phillip.com.hk"
+                    placeholder="noc@example.com"
                     value={siteForm.contact_email}
                     onChange={(e) => setSiteForm({ ...siteForm, contact_email: e.target.value })}
                     className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"

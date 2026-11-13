@@ -846,24 +846,7 @@ def seed_database():
         db.add(sp)
     db.flush()
 
-    # 14. INITIAL NOTIFICATIONS & AUDIT LOGS
-    notifs = [
-        ("Contract Expiration Warning", "Contract CT-2023-HKT-03 with HKT Enterprise Solutions expires in 28 days.", "Contract Expiration", "danger", "/contracts"),
-        ("Warranty Renewal Required", "Warranty WAR-8F3D1A00 for Palo Alto FW-01-HK expires in 45 days.", "Warranty Expiration", "warning", "/assets/NA-000123"),
-        ("Preventive Maintenance Scheduled", "Routine telemetry & optics diagnostics scheduled for Huawei SW-02-HK.", "Maintenance", "info", "/maintenance")
-    ]
-    for title, msg, cat, sev, link in notifs:
-        n = Notification(
-            user_id=created_users[0].id,
-            title=title,
-            message=msg,
-            category=cat,
-            severity=sev,
-            is_read=False,
-            link_url=link
-        )
-        db.add(n)
-
+    # 14. AUDIT LOGS
     audit_entry = AuditLog(
         user_id=created_users[0].id,
         user_email=admin_email,
