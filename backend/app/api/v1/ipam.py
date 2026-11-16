@@ -354,7 +354,7 @@ def assign_ip_address(
     if not target_hostname:
         raise HTTPException(
             status_code=400,
-            detail="Hostname / Nama Perangkat wajib diisi jika tidak ditautkan ke Asset."
+            detail="Hostname / Device Name is required when not linked to a Hardware Asset."
         )
 
     existing = db.query(IPAddress).filter(IPAddress.ip_address == target_ip).first()

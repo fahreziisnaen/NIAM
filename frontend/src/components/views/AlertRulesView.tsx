@@ -1133,7 +1133,7 @@ export function AlertRulesView() {
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-bold text-slate-700">
-                      Active Delivery Channels (Pilihan Pengiriman Alert)
+                      Active Delivery Channels
                     </label>
                     <div className="flex items-center space-x-1.5 text-[10px]">
                       <button
@@ -1145,7 +1145,7 @@ export function AlertRulesView() {
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
-                        API Saja
+                        API Only
                       </button>
                       <button
                         type="button"
@@ -1156,7 +1156,7 @@ export function AlertRulesView() {
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
-                        Email Saja
+                        Email Only
                       </button>
                       <button
                         type="button"
@@ -1167,7 +1167,7 @@ export function AlertRulesView() {
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
-                        Keduanya
+                        Both
                       </button>
                     </div>
                   </div>
@@ -1204,7 +1204,7 @@ export function AlertRulesView() {
                             : "bg-slate-200 text-slate-500"
                         }`}
                       >
-                        {formChannels.includes("api") ? "AKTIF" : "NONAKTIF"}
+                        {formChannels.includes("api") ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </button>
 
@@ -1238,7 +1238,7 @@ export function AlertRulesView() {
                             : "bg-slate-200 text-slate-500"
                         }`}
                       >
-                        {formChannels.includes("email") ? "AKTIF" : "NONAKTIF"}
+                        {formChannels.includes("email") ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </button>
                   </div>

@@ -224,7 +224,7 @@ export function TwoFactorSetupModal({
                     </span>
                   </div>
                   <p className="text-xs text-emerald-700 leading-relaxed">
-                    Akun Anda saat ini terlindungi dengan verifikasi 2 langkah (TOTP). Setiap kali login, sistem mewajibkan username, password, dan kode 6-digit dari aplikasi authenticator di HP Anda.
+                    Your account is currently protected with Two-Factor Authentication (TOTP). Each login requires your username, password, and the 6-digit verification code from your authenticator app.
                   </p>
                 </div>
               </div>
@@ -256,7 +256,7 @@ export function TwoFactorSetupModal({
                   className="w-full py-2.5 px-4 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 text-blue-700 text-xs font-bold flex items-center justify-center space-x-2 transition-colors cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Setup Ulang / Scan Ulang QR Code (Ganti HP)</span>
+                  <span>Reconfigure / Scan New QR Code</span>
                 </button>
 
                 {!confirmDisable ? (
@@ -266,12 +266,12 @@ export function TwoFactorSetupModal({
                     className="w-full py-2 px-4 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                   >
                     <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-                    <span>Nonaktifkan Two-Factor Authentication</span>
+                    <span>Disable Two-Factor Authentication</span>
                   </button>
                 ) : (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2.5">
                     <p className="text-xs text-red-800 font-medium">
-                      Apakah Anda yakin ingin menonaktifkan 2FA? Keamanan akun akan berkurang karena hanya dilindungi password biasa.
+                      Are you sure you want to disable 2FA? Account security will be reduced to standard single-factor password authentication.
                     </p>
                     <div className="flex items-center space-x-2">
                       <button
@@ -280,14 +280,14 @@ export function TwoFactorSetupModal({
                         onClick={handleDisable2FA}
                         className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:bg-red-300"
                       >
-                        {isDisabling ? "Menonaktifkan..." : "Ya, Nonaktifkan 2FA"}
+                        {isDisabling ? "Disabling..." : "Yes, Disable 2FA"}
                       </button>
                       <button
                         type="button"
                         onClick={() => setConfirmDisable(false)}
                         className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                       >
-                        Batal
+                        Cancel
                       </button>
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export function TwoFactorSetupModal({
                   className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors cursor-pointer mb-2"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Kembali ke Status 2FA Aktif</span>
+                  <span>Back to Active 2FA Status</span>
                 </button>
               )}
 
@@ -345,13 +345,13 @@ export function TwoFactorSetupModal({
                         )}
                         <div className="text-xs text-slate-600 space-y-2">
                           <p>
-                            Buka aplikasi <strong>Google Authenticator</strong> (atau Microsoft Authenticator) di HP Anda.
+                            Open <strong>Google Authenticator</strong> (or Microsoft Authenticator) on your mobile device.
                           </p>
                           <p>
-                            Tekan tombol <strong>+</strong> dan pilih <strong>Scan a QR code</strong> untuk memindai kode QR di samping.
+                            Tap the <strong>+</strong> button and select <strong>Scan a QR code</strong> to scan the code.
                           </p>
                           <p className="text-[11px] text-slate-500">
-                            Nama akun akan otomatis tersimpan sebagai <strong>PSHK - NAMS: {username}</strong>.
+                            Account name will be saved as <strong>PSHK - NAMS: {username}</strong>.
                           </p>
                         </div>
                       </div>
@@ -363,7 +363,7 @@ export function TwoFactorSetupModal({
                         <span className="w-5 h-5 rounded-full bg-slate-600 text-white flex items-center justify-center text-[10px]">
                           2
                         </span>
-                        <span>Tidak bisa scan? Masukkan setup key manual:</span>
+                        <span>Can't scan? Enter setup key manually:</span>
                       </div>
 
                       <div className="flex items-center space-x-2">
@@ -398,7 +398,7 @@ export function TwoFactorSetupModal({
                           3
                         </span>
                         <label htmlFor="verify-code">
-                          Masukkan 6-digit kode verifikasi dari aplikasi:
+                          Enter 6-digit verification code from your authenticator app:
                         </label>
                       </div>
 
@@ -429,7 +429,7 @@ export function TwoFactorSetupModal({
                           ) : (
                             <>
                               <ShieldCheck className="w-4 h-4" />
-                              <span>{isAlreadyEnabled ? "Konfirmasi & Ganti" : "Aktifkan 2FA"}</span>
+                              <span>{isAlreadyEnabled ? "Confirm & Update" : "Activate 2FA"}</span>
                             </>
                           )}
                         </button>
@@ -450,7 +450,7 @@ export function TwoFactorSetupModal({
             onClick={onClose}
             className="text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
           >
-            Tutup
+            Close
           </button>
         </div>
       </div>

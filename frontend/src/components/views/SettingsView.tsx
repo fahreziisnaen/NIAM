@@ -124,7 +124,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
     if (activeChannels.length === 0) {
       setTestResult({
         success: false,
-        message: "Perhatian: Kedua channel (API & Email) sedang nonaktif. Aktifkan minimal salah satu tombol channel di atas untuk mengirim alert.",
+        message: "Warning: Both delivery channels (API & Email) are currently disabled. Please enable at least one channel above to dispatch alerts.",
       });
       return;
     }
@@ -831,15 +831,15 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
             {/* Quick Channel Mode Bar */}
             <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-slate-800 block">Pilihan Cepat Status Pengiriman:</span>
+                <span className="text-xs font-bold text-slate-800 block">Quick Channel Presets:</span>
                 <span className="text-[11px] text-slate-500">
-                  Pilih channel mana saja yang aktif:{" "}
+                  Active alert delivery channels:{" "}
                   <strong className={gatewayApiEnabled ? "text-blue-600 font-semibold" : "text-slate-400"}>
-                    API POST ({gatewayApiEnabled ? "Aktif" : "Nonaktif"})
+                    API POST ({gatewayApiEnabled ? "Active" : "Inactive"})
                   </strong>
                   {" • "}
                   <strong className={gatewayEmailEnabled ? "text-emerald-600 font-semibold" : "text-slate-400"}>
-                    Email ({gatewayEmailEnabled ? "Aktif" : "Nonaktif"})
+                    Email ({gatewayEmailEnabled ? "Active" : "Inactive"})
                   </strong>
                 </span>
               </div>
@@ -855,9 +855,9 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       ? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400/40"
                       : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                   }`}
-                  title="Hanya kirim alert via API POST / WhatsApp"
+                  title="Dispatch alerts via API POST / WhatsApp only"
                 >
-                  API POST Saja
+                  API POST Only
                 </button>
                 <button
                   type="button"
@@ -870,9 +870,9 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       ? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400/40"
                       : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                   }`}
-                  title="Hanya kirim alert via Email Relay"
+                  title="Dispatch alerts via Email Relay only"
                 >
-                  Email Saja
+                  Email Only
                 </button>
                 <button
                   type="button"
@@ -885,9 +885,9 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       ? "bg-slate-900 text-white shadow-xs ring-2 ring-slate-400/40"
                       : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                   }`}
-                  title="Aktifkan kedua channel (API & Email)"
+                  title="Enable both delivery channels (API & Email)"
                 >
-                  Keduanya Aktif
+                  Enable Both
                 </button>
                 <button
                   type="button"
@@ -900,9 +900,9 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       ? "bg-red-600 text-white shadow-xs ring-2 ring-red-400/40"
                       : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
                   }`}
-                  title="Nonaktifkan semua pengiriman alert (Mute)"
+                  title="Mute all alert dispatches"
                 >
-                  Nonaktifkan Semua
+                  Mute All
                 </button>
               </div>
             </div>
@@ -943,8 +943,8 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       }`}
                       title={
                         gatewayApiEnabled
-                          ? "Klik untuk menonaktifkan pengiriman API POST"
-                          : "Klik untuk mengaktifkan pengiriman API POST"
+                          ? "Click to disable API POST dispatch"
+                          : "Click to enable API POST dispatch"
                       }
                     >
                       <span
@@ -952,7 +952,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                           gatewayApiEnabled ? "bg-white animate-pulse" : "bg-slate-400"
                         }`}
                       />
-                      <span>{gatewayApiEnabled ? "AKTIF" : "NONAKTIF"}</span>
+                      <span>{gatewayApiEnabled ? "ACTIVE" : "INACTIVE"}</span>
                     </button>
                   </div>
 
@@ -960,7 +960,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                     <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 font-medium flex items-center space-x-1.5">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>
-                        Channel API Webhook sedang <strong>NONAKTIF</strong>. Alert tidak akan dikirim via API POST.
+                        API Webhook channel is currently <strong>INACTIVE</strong>. Alerts will not be dispatched via API POST.
                       </span>
                     </div>
                   )}
@@ -1062,8 +1062,8 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                       }`}
                       title={
                         gatewayEmailEnabled
-                          ? "Klik untuk menonaktifkan pengiriman Email"
-                          : "Klik untuk mengaktifkan pengiriman Email"
+                          ? "Click to disable Email dispatch"
+                          : "Click to enable Email dispatch"
                       }
                     >
                       <span
@@ -1071,7 +1071,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                           gatewayEmailEnabled ? "bg-white animate-pulse" : "bg-slate-400"
                         }`}
                       />
-                      <span>{gatewayEmailEnabled ? "AKTIF" : "NONAKTIF"}</span>
+                      <span>{gatewayEmailEnabled ? "ACTIVE" : "INACTIVE"}</span>
                     </button>
                   </div>
 
@@ -1079,7 +1079,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                     <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 font-medium flex items-center space-x-1.5">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>
-                        Channel Email Relay sedang <strong>NONAKTIF</strong>. Alert tidak akan dikirim via Email.
+                        Email Relay channel is currently <strong>INACTIVE</strong>. Alerts will not be dispatched via Email.
                       </span>
                     </div>
                   )}

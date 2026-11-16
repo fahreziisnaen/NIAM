@@ -91,12 +91,12 @@ export function NotificationDetailModal({
     setDispatchResult(null);
 
     if (channel === "api" && !targetId.trim()) {
-      setDispatchError("Nomor tujuan (Destination Number / Target ID) wajib diisi.");
+      setDispatchError("Destination Number / Target ID is required.");
       return;
     }
 
     if (channel === "email" && !emailTo.trim()) {
-      setDispatchError("Email tujuan (Recipient Email) wajib diisi.");
+      setDispatchError("Recipient Email is required.");
       return;
     }
 
@@ -124,20 +124,20 @@ export function NotificationDetailModal({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || "Gagal mengirim notifikasi alert");
+        throw new Error(data.detail || "Failed to dispatch alert notification");
       }
 
       // Check for channel errors returned in payload results
       const failedResult = data.results?.find((r: any) => r.status === "ERROR" || r.status === "CONFIG_ERROR");
       if (failedResult) {
-        throw new Error(failedResult.detail || `Gagal mengirim notifikasi via ${channel.toUpperCase()}`);
+        throw new Error(failedResult.detail || `Failed to dispatch notification via ${channel.toUpperCase()}`);
       }
 
       setDispatchResult(data);
       // Automatically mark as read once dispatched
       handleMarkAsRead();
     } catch (err: any) {
-      setDispatchError(err.message || "Gagal menghubungi gateway notifikasi");
+      setDispatchError(err.message || "Failed to reach notification gateway");
     } finally {
       setIsSending(false);
     }
@@ -269,14 +269,14 @@ export function NotificationDetailModal({
                 </h4>
               </div>
               <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">
-                Pilih Saluran
+                Select Channel
               </span>
             </div>
 
             {/* Channel Selection Buttons */}
             <div>
               <p className="text-[11px] text-slate-500 mb-2">
-                Klik tombol di bawah untuk membuka konfigurasi pengiriman:
+                Click a channel below to configure outbound alert dispatch:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* API Webhook / WhatsApp Button */}
@@ -303,11 +303,11 @@ export function NotificationDetailModal({
                     </div>
                     <div>
                       <div className="text-xs font-bold leading-tight">API Webhook / WhatsApp</div>
-                      <div className="text-[10px] text-slate-400">Kirim ke nomor tujuan</div>
+                      <div className="text-[10px] text-slate-400">Dispatch to destination number / ID</div>
                     </div>
                   </div>
                   <span className={`text-[11px] font-semibold ${activeChannel === "api" ? "text-blue-700" : "text-slate-400"}`}>
-                    {activeChannel === "api" ? "Tutup ▲" : "Buka ▼"}
+                    {activeChannel === "api" ? "Close ▲" : "Configure ▼"}
                   </span>
                 </button>
 
@@ -335,11 +335,11 @@ export function NotificationDetailModal({
                     </div>
                     <div>
                       <div className="text-xs font-bold leading-tight">Email Notification</div>
-                      <div className="text-[10px] text-slate-400">Kirim ke email tujuan</div>
+                      <div className="text-[10px] text-slate-400">Dispatch to recipient email(s)</div>
                     </div>
                   </div>
                   <span className={`text-[11px] font-semibold ${activeChannel === "email" ? "text-emerald-700" : "text-slate-400"}`}>
-                    {activeChannel === "email" ? "Tutup ▲" : "Buka ▼"}
+                    {activeChannel === "email" ? "Close ▲" : "Configure ▼"}
                   </span>
                 </button>
               </div>
@@ -357,24 +357,24 @@ export function NotificationDetailModal({
                 <div className="flex items-center justify-between border-b border-blue-100 pb-2">
                   <span className="text-xs font-bold text-blue-900 flex items-center">
                     <Smartphone className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                    Konfigurasi Webhook / WhatsApp Gateway
+                    API Webhook / WhatsApp Gateway Configuration
                   </span>
                   <span className="text-[10px] text-slate-400 flex items-center gap-1">
                     <Info className="w-3 h-3 text-slate-400" />
-                    Sender & Endpoint diatur di Settings
+                    Sender & Endpoint configured in Settings
                   </span>
                 </div>
 
                 {/* Destination Number Only */}
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                    Nomor Tujuan / Destination Number (ID) *
+                    Destination Number / Target ID *
                   </label>
                   <input
                     type="text"
                     value={targetId}
                     onChange={(e) => setTargetId(e.target.value)}
-                    placeholder="Contoh: 628123456789 atau ID Group"
+                    placeholder="e.g. 628123456789 or Group ID"
                     className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                     required
                   />
@@ -383,7 +383,7 @@ export function NotificationDetailModal({
                 {/* Message Content */}
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                    Isi Pesan / Message Content *
+                    Message Content *
                   </label>
                   <textarea
                     rows={3}
@@ -401,7 +401,7 @@ export function NotificationDetailModal({
                     onClick={() => setActiveChannel(null)}
                     className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/50 rounded-lg cursor-pointer"
                   >
-                    Batal
+                    Cancel
                   </button>
                   <button
                     type="submit"
@@ -411,12 +411,12 @@ export function NotificationDetailModal({
                     {isSending ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Mengirim via Webhook...</span>
+                        <span>Dispatching via Webhook...</span>
                       </>
                     ) : (
                       <>
                         <Send className="w-3.5 h-3.5" />
-                        <span>Kirim via Webhook</span>
+                        <span>Dispatch via Webhook</span>
                       </>
                     )}
                   </button>
@@ -436,24 +436,24 @@ export function NotificationDetailModal({
                 <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
                   <span className="text-xs font-bold text-emerald-900 flex items-center">
                     <Mail className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                    Konfigurasi Email Notification
+                    Email Notification Configuration
                   </span>
                   <span className="text-[10px] text-slate-400 flex items-center gap-1">
                     <Info className="w-3 h-3 text-slate-400" />
-                    Sender & SMTP diatur di Settings
+                    Sender & SMTP configured in Settings
                   </span>
                 </div>
 
                 {/* Destination Email Only */}
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                    Email Tujuan / Recipient(s) *
+                    Recipient Email(s) *
                   </label>
                   <input
                     type="text"
                     value={emailTo}
                     onChange={(e) => setEmailTo(e.target.value)}
-                    placeholder="Contoh: noc-alerts@company.com, admin@company.com"
+                    placeholder="e.g. noc-alerts@company.com, admin@company.com"
                     className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                     required
                   />
@@ -462,7 +462,7 @@ export function NotificationDetailModal({
                 {/* Message Content */}
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                    Isi Pesan / Message Content *
+                    Message Content *
                   </label>
                   <textarea
                     rows={3}
@@ -480,7 +480,7 @@ export function NotificationDetailModal({
                     onClick={() => setActiveChannel(null)}
                     className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/50 rounded-lg cursor-pointer"
                   >
-                    Batal
+                    Cancel
                   </button>
                   <button
                     type="submit"
@@ -490,12 +490,12 @@ export function NotificationDetailModal({
                     {isSending ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Mengirim Email...</span>
+                        <span>Sending Email...</span>
                       </>
                     ) : (
                       <>
                         <Mail className="w-3.5 h-3.5" />
-                        <span>Kirim via Email</span>
+                        <span>Dispatch via Email</span>
                       </>
                     )}
                   </button>
@@ -516,7 +516,7 @@ export function NotificationDetailModal({
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 space-y-2">
                 <div className="flex items-center space-x-1.5 font-bold text-emerald-700">
                   <Check className="w-4 h-4 text-emerald-600" />
-                  <span>Notifikasi Alert Berhasil Dikirim!</span>
+                  <span>Alert Successfully Dispatched!</span>
                 </div>
                 <div className="space-y-1 text-[11px]">
                   {dispatchResult.results?.map((r: any, idx: number) => (
@@ -526,8 +526,8 @@ export function NotificationDetailModal({
                       </span>
                       <span>
                         {r.channel === "API"
-                          ? `Terkirim ke ID ${r.recipient_id || targetId} (Status: ${r.status})`
-                          : `Terkirim ke ${r.recipient || emailTo} (Status: ${r.status})`}
+                          ? `Dispatched to ID ${r.recipient_id || targetId} (Status: ${r.status})`
+                          : `Dispatched to ${r.recipient || emailTo} (Status: ${r.status})`}
                       </span>
                     </div>
                   ))}

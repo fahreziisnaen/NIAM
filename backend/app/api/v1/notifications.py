@@ -221,13 +221,13 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
             results.append({
                 "channel": "API",
                 "status": "CONFIG_ERROR",
-                "detail": "API Webhook Endpoint belum dikonfigurasi di Settings. Silakan atur Endpoint URL di menu Settings > Alert Gateway."
+                "detail": "API Webhook Endpoint is not configured. Please set Endpoint URL in Settings > Alert Gateway."
             })
         elif not target_id:
             results.append({
                 "channel": "API",
                 "status": "ERROR",
-                "detail": "Nomor tujuan (Destination Number / Target ID) wajib diisi."
+                "detail": "Destination Number / Target ID is required."
             })
         else:
             # Exact JSON payload requested by user:
@@ -293,7 +293,7 @@ def send_alert(req: SendAlertRequest, db: Session = Depends(get_db)):
             results.append({
                 "channel": "EMAIL",
                 "status": "ERROR",
-                "detail": "Email tujuan (Recipient Email) wajib diisi."
+                "detail": "Recipient Email is required."
             })
         else:
             email_status = "SUCCESS"

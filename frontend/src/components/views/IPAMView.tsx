@@ -424,7 +424,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
     e.preventDefault();
     const parsed = parseBulkText();
     if (parsed.length === 0) {
-      notifyError("Tidak ada baris data IP valid yang terdeteksi untuk di-import.");
+      notifyError("No valid IP records detected for import.");
       return;
     }
 
@@ -456,7 +456,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
       const data = await res.json();
       setBulkModalOpen(false);
       setBulkText("");
-      notifySuccess(data.message || `Berhasil meng-import ${data.total} data IP!`);
+      notifySuccess(data.message || `Successfully imported ${data.total} IP records!`);
       loadAddresses();
       loadMasterData();
     } catch (err: any) {
@@ -1256,7 +1256,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
             <option value="Network Hardware">🖧 Hardware Asset</option>
             <option value="Printer / Peripheral">🖨️ Printer / Peripheral</option>
             <option value="Gateway / VIP">🌐 Gateway / VIP</option>
-            <option value="Other">Lainnya</option>
+            <option value="Other">Other</option>
           </select>
 
           <button
@@ -1266,7 +1266,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
               setBulkModalOpen(true);
             }}
             className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl shadow-xs cursor-pointer transition-colors"
-            title="Import data IP dari Excel / CSV"
+            title="Import IP data from Excel / CSV"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Import Excel</span>
@@ -1618,7 +1618,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
               {/* Mode Switcher Tabs */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
-                  Tipe Alokasi Perangkat:
+                  Device Allocation Mode:
                 </label>
                 <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
                   <button
@@ -1641,7 +1641,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    🖧 Tautkan ke Hardware Asset
+                    🖧 Link to Hardware Asset
                   </button>
                 </div>
               </div>
@@ -1650,8 +1650,8 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
               {assignMode === "standalone" ? (
                 <>
                   <div className="p-3 bg-blue-50/60 border border-blue-200/80 rounded-xl text-[11px] text-blue-900 leading-relaxed">
-                    💡 <strong>Tidak butuh data asset fisik.</strong> Masukkan hostname perangkat / VM Anda di bawah.
-                    Nanti jika data Asset fisik sudah diinput ke sistem, Anda dapat menautkannya ke Asset kapan saja lewat tombol <strong>Edit IP</strong>.
+                    💡 <strong>No physical hardware asset required.</strong> Enter your virtual machine or device hostname below.
+                    If a physical hardware asset is registered later, you can link it at any time via <strong>Edit IP</strong>.
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1662,7 +1662,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                       <input
                         type="text"
                         required
-                        placeholder="Contoh: SRV-VM-APP01 atau PC-USER-12"
+                        placeholder="e.g. SRV-VM-APP01 or PC-USER-12"
                         value={assignForm.hostname}
                         onChange={(e) => setAssignForm({ ...assignForm, hostname: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white text-xs"
@@ -1670,7 +1670,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Tipe Perangkat *
+                        Device Type *
                       </label>
                       <select
                         value={assignForm.device_type}
@@ -1681,7 +1681,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                         <option value="Endpoint / PC User">🖥️ Endpoint / PC User</option>
                         <option value="Printer / Peripheral">🖨️ Printer / Office Peripheral</option>
                         <option value="Gateway / VIP">🌐 Gateway / Floating VIP</option>
-                        <option value="Other">Lainnya / Testing</option>
+                        <option value="Other">Other / Testing</option>
                       </select>
                     </div>
                   </div>
@@ -1689,7 +1689,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        MAC Address (Opsional)
+                        MAC Address (Optional)
                       </label>
                       <input
                         type="text"
@@ -1701,7 +1701,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Interface / Port (Opsional)
+                        Interface / Port (Optional)
                       </label>
                       <input
                         type="text"
@@ -1715,11 +1715,11 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Deskripsi / Pengguna / Layanan
+                      Description / User / Service
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Web server frontend aplikasi / PC Pak Budi"
+                      placeholder="e.g. Production Web Frontend / User Workstation"
                       value={assignForm.description}
                       onChange={(e) => setAssignForm({ ...assignForm, description: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white text-xs"
@@ -1731,11 +1731,11 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                 <>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Pilih Hardware Asset dari Inventaris *
+                      Select Hardware Asset from Inventory *
                     </label>
                     {assignableAssets.length === 0 ? (
                       <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
-                        ⚠️ Belum ada data Hardware Asset terdaftar di sistem. Silakan beralih ke tab <strong>"VM / Endpoint (Non-Asset)"</strong> di atas untuk tetap mengalokasikan IP ini.
+                        ⚠️ No hardware assets registered in the system yet. Switch to the <strong>"VM / Endpoint (Non-Asset)"</strong> tab above to allocate this IP address.
                       </div>
                     ) : (
                       <SearchableSelect
@@ -1746,8 +1746,8 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                         }))}
                         value={assignForm.asset_id || (assignableAssets[0]?.id ?? 0)}
                         onChange={(val) => setAssignForm({ ...assignForm, asset_id: Number(val) })}
-                        placeholder="Cari asset berdasarkan hostname atau tag..."
-                        searchPlaceholder="Ketik hostname, tag, atau IP..."
+                        placeholder="Search asset by hostname or tag..."
+                        searchPlaceholder="Type hostname, tag, or IP..."
                         searchThreshold={5}
                       />
                     )}
@@ -1757,7 +1757,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Network Interface Name</label>
                     <input
                       type="text"
-                      placeholder="e.g. GigabitEthernet1/0/1 atau Management0"
+                      placeholder="e.g. GigabitEthernet1/0/1 or Management0"
                       value={assignForm.interface_name}
                       onChange={(e) => setAssignForm({ ...assignForm, interface_name: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white text-xs"
@@ -1765,7 +1765,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Deskripsi Tambahan</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Additional Description</label>
                     <input
                       type="text"
                       placeholder="e.g. Dedicated management uplink interface"
@@ -1783,14 +1783,14 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   onClick={() => setAssignModalOpen(false)}
                   className="px-4 py-2 border border-slate-200 rounded-lg font-semibold text-slate-600 hover:bg-slate-50"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={assignMode === "asset" && assignableAssets.length === 0}
                   className="px-4 py-2 bg-[#1E60D5] hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  Konfirmasi Alokasi IP
+                  Confirm IP Allocation
                 </button>
               </div>
             </form>
@@ -1856,7 +1856,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Tipe Perangkat</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Device Type</label>
                   <select
                     value={ipForm.device_type}
                     onChange={(e) => setIpForm({ ...ipForm, device_type: e.target.value })}
@@ -1867,16 +1867,16 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                     <option value="Network Hardware">🖧 Hardware Asset</option>
                     <option value="Printer / Peripheral">🖨️ Printer / Peripheral</option>
                     <option value="Gateway / VIP">🌐 Gateway / VIP</option>
-                    <option value="Other">Lainnya</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
 
-              {/* Tautkan ke Hardware Asset (Opsional) */}
+              {/* Link to Hardware Asset (Optional) */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[11px] font-bold text-slate-700">
-                    Tautkan ke Hardware Asset (Opsional)
+                    Link to Hardware Asset (Optional)
                   </label>
                   {ipForm.asset_id && (
                     <button
@@ -1884,7 +1884,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                       onClick={() => setIpForm({ ...ipForm, asset_id: null })}
                       className="text-[10px] text-rose-600 hover:underline font-semibold"
                     >
-                      Lepas Tautan Asset
+                      Unlink Asset
                     </button>
                   )}
                 </div>
@@ -1892,13 +1892,13 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   options={[
                     {
                       value: 0,
-                      label: "— Tidak Ada / Non-Asset (Standalone / VM) —",
-                      subLabel: "IP digunakan oleh server virtual, endpoint, atau perangkat tanpa data asset fisik",
+                      label: "— None / Non-Asset (Standalone / VM) —",
+                      subLabel: "IP used by virtual server, endpoint, or unlinked equipment",
                     },
                     ...assignableAssets.map((a) => ({
                       value: a.id,
                       label: `${a.hostname} (${a.asset_id})`,
-                      subLabel: `${a.model || ""} [IP Saat ini: ${a.management_ip || "-"}]`,
+                      subLabel: `${a.model || ""} [Current IP: ${a.management_ip || "-"}]`,
                     })),
                   ]}
                   value={ipForm.asset_id || 0}
@@ -1917,12 +1917,12 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                       });
                     }
                   }}
-                  placeholder="Pilih atau cari asset..."
-                  searchPlaceholder="Ketik hostname, tag, atau model..."
+                  placeholder="Select or search asset..."
+                  searchPlaceholder="Type hostname, tag, or model..."
                   searchThreshold={5}
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
-                  Jika asset fisik belum diinput, biarkan opsi "Tidak Ada". Nanti Anda bisa memilih asset di sini kapan saja.
+                  If physical hardware asset is not yet registered, leave as "None". You can link it here at any time.
                 </span>
               </div>
 
@@ -1953,7 +1953,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Interface Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. eth0, ens192, atau GigabitEthernet1/0/1"
+                  placeholder="e.g. eth0, ens192, or GigabitEthernet1/0/1"
                   value={ipForm.interface_name}
                   onChange={(e) => setIpForm({ ...ipForm, interface_name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white"
@@ -2001,9 +2001,9 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
               <div className="flex items-center space-x-2">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Import Data IP dari Excel / CSV</h3>
+                  <h3 className="text-sm font-bold text-slate-900">Import IP Records from Excel / CSV</h3>
                   <p className="text-[11px] text-slate-500">
-                    Masukkan data alokasi IP langsung dari spreadsheet tanpa wajib memiliki asset fisik.
+                    Import IP allocations directly from a spreadsheet without requiring physical hardware assets.
                   </p>
                 </div>
               </div>
@@ -2036,16 +2036,16 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                     type="button"
                     onClick={() => {
                       setBulkText(
-`10.200.10.11\tSRV-DB-PROD01\tServer VM\tDatabase MySQL Utama Cluster A
-10.200.10.12\tSRV-APP-PROD01\tServer VM\tBackend API Production
-10.200.10.50\tPC-FINANCE-01\tEndpoint / PC User\tPC Bu Dewi Akuntansi
+`10.200.10.11\tSRV-DB-PROD01\tServer VM\tPrimary MySQL Database Cluster A
+10.200.10.12\tSRV-APP-PROD01\tServer VM\tProduction Backend API
+10.200.10.50\tPC-FINANCE-01\tEndpoint / PC User\tFinance Dept Workstation
 10.200.10.88\tPRINTER-FIN-FL2\tPrinter / Peripheral\tNetwork Printer HP LaserJet
 10.200.10.1\tGW-VRRP-VIP\tGateway / VIP\tVirtual IP Gateway Router`
                       );
                     }}
                     className="w-full py-2 px-3 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-semibold text-center text-[11px]"
                   >
-                    Load Contoh Format Excel
+                    Load Sample Excel Format
                   </button>
                 </div>
               </div>
@@ -2053,10 +2053,10 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[11px] font-bold text-slate-700">
-                    Tempel Data (Copy-Paste dari Kolom Excel) *
+                    Paste Data (Copy-Paste from Excel Columns) *
                   </label>
                   <span className="text-[10px] text-slate-400">
-                    Format: IP [Tab/Koma] Hostname [Tab/Koma] Tipe [Tab/Koma] Deskripsi
+                    Format: IP [Tab/Comma] Hostname [Tab/Comma] Device Type [Tab/Comma] Description
                   </span>
                 </div>
                 <textarea
@@ -2064,7 +2064,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   required
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
-                  placeholder={`Contoh baris Excel:\n10.200.10.20\tSRV-VM-TEST01\tServer VM\tServer Staging Testing\n10.200.10.21\tPC-USER-05\tEndpoint / PC User\tLaptop Pak Rudi`}
+                  placeholder={`Sample Excel rows:\n10.200.10.20\tSRV-VM-TEST01\tServer VM\tStaging Testing Server\n10.200.10.21\tPC-USER-05\tEndpoint / PC User\tFinance Workstation`}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] leading-relaxed focus:bg-white outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
@@ -2074,9 +2074,9 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-bold text-slate-700">
-                      Pratinjau Data Terdeteksi ({parseBulkText().length} baris):
+                      Detected Data Preview ({parseBulkText().length} records):
                     </span>
-                    <span className="text-emerald-600 font-semibold">Siap di-import</span>
+                    <span className="text-emerald-600 font-semibold">Ready to Import</span>
                   </div>
                   <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50/50">
                     <table className="w-full text-[11px] text-left">
@@ -2084,8 +2084,8 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                         <tr>
                           <th className="px-3 py-1.5">IP</th>
                           <th className="px-3 py-1.5">Hostname</th>
-                          <th className="px-3 py-1.5">Tipe</th>
-                          <th className="px-3 py-1.5">Deskripsi</th>
+                          <th className="px-3 py-1.5">Device Type</th>
+                          <th className="px-3 py-1.5">Description</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -2101,7 +2101,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                     </table>
                     {parseBulkText().length > 10 && (
                       <div className="px-3 py-1 text-[10px] text-slate-400 bg-slate-50 text-center border-t border-slate-100">
-                        + {parseBulkText().length - 10} baris lainnya...
+                        + {parseBulkText().length - 10} more records...
                       </div>
                     )}
                   </div>
@@ -2114,7 +2114,7 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   onClick={() => setBulkModalOpen(false)}
                   className="px-4 py-2 border border-slate-200 rounded-lg font-semibold text-slate-600 hover:bg-slate-50"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -2124,12 +2124,12 @@ export function IPAMView({ onSelectAsset }: IPAMViewProps = {}) {
                   {isBulkImporting ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Mengimport Data...</span>
+                      <span>Importing Records...</span>
                     </>
                   ) : (
                     <>
                       <FileSpreadsheet className="w-3.5 h-3.5" />
-                      <span>Import {parseBulkText().length} Baris Data ke IPAM</span>
+                      <span>Import {parseBulkText().length} Records to IPAM</span>
                     </>
                   )}
                 </button>
