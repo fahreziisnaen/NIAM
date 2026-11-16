@@ -20,9 +20,38 @@ def seed_database():
     Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
 
+    admin_uname = os.getenv("INITIAL_ADMIN_USERNAME", "admin").strip()
+    admin_pwd = os.getenv("INITIAL_ADMIN_PASSWORD", "Phillip2026!").strip()
+    admin_email = os.getenv("INITIAL_ADMIN_EMAIL", "admin@phillip.com.hk").strip()
+    admin_full_name = os.getenv("INITIAL_ADMIN_FULL_NAME", "Administrator").strip()
+
+    # Find existing admin user (either by configured admin_uname, old 'admin', or superuser flag)
+    existing_admin = (
+        db.query(User).filter(User.username == admin_uname).first()
+        or db.query(User).filter(User.username == "admin").first()
+        or db.query(User).filter(User.is_superuser == True).first()
+    )
+
     # Check if already seeded
-    if db.query(User).filter_by(username="admin").first():
-        print("[DB SEED] Database already populated. Ensuring baseline alert rules and settings are active...")
+    if existing_admin:
+        print(f"[DB SEED] Database already populated. Syncing superadmin credentials with .env ({admin_uname})...")
+        existing_admin.username = admin_uname
+        if admin_email:
+            existing_admin.email = admin_email
+        if admin_full_name:
+            existing_admin.full_name = admin_full_name
+        existing_admin.hashed_password = get_password_hash(admin_pwd)
+        existing_admin.is_active = True
+        existing_admin.is_superuser = True
+
+        # If user explicitly requests 2FA reset via .env (e.g. lost phone / lockout recovery)
+        if os.getenv("RESET_ADMIN_2FA", "false").lower() in ("true", "1", "yes"):
+            existing_admin.is_two_factor_enabled = False
+            existing_admin.two_factor_secret = None
+            print(f"[DB SEED] RESET_ADMIN_2FA is true: Two-factor authentication cleared for '{admin_uname}'.")
+
+        db.commit()
+
         from app.api.v1.alerts import seed_default_rules, get_or_create_alert_settings
         seed_default_rules(db)
         get_or_create_alert_settings(db)

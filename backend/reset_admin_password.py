@@ -50,6 +50,10 @@ def main():
             sys.exit(1)
 
         user.hashed_password = get_password_hash(new_pwd)
+        if "--clear-2fa" in sys.argv or "--reset-2fa" in sys.argv:
+            user.is_two_factor_enabled = False
+            user.two_factor_secret = None
+            print(f"[SUCCESS] Two-Factor Authentication (2FA) for '{username}' has been disabled.")
         db.commit()
         print(f"[SUCCESS] Password for user '{username}' has been successfully updated in database!")
     except Exception as e:
