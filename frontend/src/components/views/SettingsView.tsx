@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle, Eye } from "lucide-react";
+import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle, Eye, Database, Download, HardDrive } from "lucide-react";
 import { TwoFactorSetupModal } from "@/components/auth/TwoFactorSetupModal";
 import { AlertRulesView } from "@/components/views/AlertRulesView";
 import { apiUrl } from "@/lib/api";
@@ -113,6 +113,34 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
       setGatewaySaveMsg("Failed to save gateway configuration");
     } finally {
       setGatewaySaving(false);
+    }
+  };
+
+  const [downloadingBackup, setDownloadingBackup] = useState(false);
+
+  const handleDownloadBackup = async () => {
+    setDownloadingBackup(true);
+    try {
+      const token = getAuthToken();
+      const res = await fetch(apiUrl("/api/v1/system/backup/export-json"), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        throw new Error("Failed to generate database backup");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pshk_nams_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to download backup");
+    } finally {
+      setDownloadingBackup(false);
     }
   };
 
@@ -806,6 +834,73 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
                   defaultValue="02:00 HKT (Automated Snapshots with 30-day retention)"
                   className="w-full px-3 py-1.5 border border-slate-300 rounded-lg"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Enterprise Database Backup & Disaster Recovery */}
+          <div className="pt-6 border-t border-slate-200/80 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center space-x-2">
+                <Database className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Enterprise Database Backup & Disaster Recovery
+                </h3>
+              </div>
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded font-semibold border border-emerald-200">
+                PostgreSQL 16 & Attached Storage
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Download instant snapshots of all inventory, IPAM, contracts, and device data, or run automated native PostgreSQL binary backups directly on your server host.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Option A: 1-Click UI Snapshot */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Download className="w-4 h-4 text-blue-600" />
+                  <h4 className="text-xs font-bold text-slate-800">1-Click JSON Snapshot</h4>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Export all database records (VLANs, IPs, Assets, Locations, Contracts, Rules) into a portable JSON backup file directly through your browser.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDownloadBackup}
+                  disabled={downloadingBackup}
+                  className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {downloadingBackup ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Generating Backup...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Full Backup (.json)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Option B: Native Server CLI Backup (pg_dump) */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <HardDrive className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-xs font-bold text-slate-800">Server CLI & Automated Backups</h4>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Production-grade compressed PostgreSQL backup & restore scripts are pre-installed in the root directory:
+                </p>
+                <div className="bg-slate-900 text-slate-100 rounded-lg p-2.5 font-mono text-[10px] space-y-1">
+                  <div className="text-slate-400"># Backup DB & Uploads (creates .sql.gz):</div>
+                  <div className="text-emerald-400">./backup.sh</div>
+                  <div className="text-slate-400 pt-1"># Interactive Restore DB & Uploads:</div>
+                  <div className="text-blue-400">./restore.sh</div>
+                </div>
               </div>
             </div>
           </div>

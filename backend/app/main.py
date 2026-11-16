@@ -24,7 +24,8 @@ from app.api.v1 import (
     documents,
     notifications,
     alerts,
-    b2b_connections
+    b2b_connections,
+    system
 )
 
 app = FastAPI(
@@ -85,6 +86,7 @@ app.include_router(documents.router, prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(alerts.router, prefix=settings.API_V1_STR)
 app.include_router(b2b_connections.router, prefix=settings.API_V1_STR)
+app.include_router(system.router, prefix=settings.API_V1_STR)
 
 # Static file serving for uploads
 if os.path.exists(settings.UPLOAD_DIR):
