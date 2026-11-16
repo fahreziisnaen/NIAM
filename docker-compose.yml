@@ -31,7 +31,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-PhillipPostgres2026!}@db:5432/${POSTGRES_DB:-phillip_assets}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-PhillipPostgres2026!}@db:5432/${POSTGRES_DB:-phillip_assets}
       SECRET_KEY: ${SECRET_KEY:-phillip-securities-hk-super-secret-key-2026-production}
       API_V1_STR: /api/v1
       UPLOAD_DIR: /app/uploads

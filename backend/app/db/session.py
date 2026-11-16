@@ -14,6 +14,19 @@ if database_url.startswith("sqlite"):
 is_postgres = "postgres" in database_url.lower()
 
 if is_postgres:
+    # Automatically adapt URL driver if standard postgresql:// is provided:
+    # SQLAlchemy 2.0 defaults to 'psycopg' (v3). If only 'psycopg2' is installed,
+    # route to postgresql+psycopg2:// so connection succeeds seamlessly.
+    if database_url.startswith("postgresql://"):
+        try:
+            import psycopg
+        except ImportError:
+            try:
+                import psycopg2
+                database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            except ImportError:
+                pass
+
     # Persistent PostgreSQL Connection with retry loop
     # NEVER silently fallback to ephemeral SQLite in containers to prevent data loss on rebuild!
     max_retries = 15
