@@ -26,6 +26,7 @@ class IPAddress(Base):
     vlan_id = Column(Integer, ForeignKey("vlans.id", ondelete="SET NULL"), nullable=True)
     status = Column(String(20), default="Available", index=True)  # Available, Assigned, Reserved, Deprecated
     asset_id = Column(Integer, ForeignKey("assets.id", ondelete="SET NULL"), nullable=True)
+    device_type = Column(String(50), default="Server VM", nullable=True)  # Server VM, Endpoint, Network Hardware, Printer, VIP / Gateway, Other
     hostname = Column(String(100), nullable=True)
     mac_address = Column(String(50), nullable=True)
     interface_name = Column(String(50), nullable=True)
@@ -34,6 +35,7 @@ class IPAddress(Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     vlan = relationship("VLAN", back_populates="ip_addresses")
+    asset = relationship("Asset", foreign_keys=[asset_id])
 
 class NetworkConnection(Base):
     __tablename__ = "network_connections"

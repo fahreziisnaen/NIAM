@@ -36,6 +36,7 @@ class IPAddressBase(BaseModel):
     vlan_id: Optional[int] = None
     status: Optional[str] = "Available"
     asset_id: Optional[int] = None
+    device_type: Optional[str] = "Server VM"
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
     interface_name: Optional[str] = None
@@ -51,6 +52,7 @@ class IPAddressUpdate(BaseModel):
     vlan_id: Optional[int] = None
     status: Optional[str] = None
     asset_id: Optional[int] = None
+    device_type: Optional[str] = None
     hostname: Optional[str] = None
     mac_address: Optional[str] = None
     interface_name: Optional[str] = None
@@ -59,9 +61,35 @@ class IPAddressUpdate(BaseModel):
 class IPAddressOut(IPAddressBase):
     id: int
     updated_at: Optional[datetime] = None
+    asset_hostname: Optional[str] = None
+    asset_model: Optional[str] = None
+    asset_tag: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+class AssignIPRequest(BaseModel):
+    ip_address: str
+    hostname: Optional[str] = None
+    device_type: Optional[str] = "Server VM"
+    asset_id: Optional[int] = None
+    mac_address: Optional[str] = None
+    interface_name: Optional[str] = None
+    description: Optional[str] = None
+
+class BulkIPImportItem(BaseModel):
+    ip_address: str
+    subnet: Optional[str] = None
+    vlan_id: Optional[int] = None
+    status: Optional[str] = "Assigned"
+    hostname: Optional[str] = None
+    device_type: Optional[str] = "Server VM"
+    mac_address: Optional[str] = None
+    interface_name: Optional[str] = None
+    description: Optional[str] = None
+
+class BulkIPImportRequest(BaseModel):
+    items: List[BulkIPImportItem]
 
 class ConnectionBase(BaseModel):
     source_asset_id: int

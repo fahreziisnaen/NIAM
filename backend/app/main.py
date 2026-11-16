@@ -116,6 +116,20 @@ def on_startup():
     # Ensure tables exist
     print("[Startup] Ensuring database schema and tables exist...")
     Base.metadata.create_all(bind=engine)
+    
+    # Run lightweight schema migrations for existing tables
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            try:
+                conn.execute(text("ALTER TABLE ip_addresses ADD COLUMN device_type VARCHAR(50) DEFAULT 'Server VM'"))
+                conn.commit()
+                print("[Startup Migration] Added device_type to ip_addresses.")
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"[Startup Migration Note] {e}")
+
     try:
         print("[Startup] Verifying baseline reference data...")
         seed_database()
