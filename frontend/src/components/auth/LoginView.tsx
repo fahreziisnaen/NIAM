@@ -20,19 +20,27 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Default strictly to FALSE for enterprise production security!
   const [showDemoAccounts, setShowDemoAccounts] = useState<boolean>(() => {
-    return process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS !== "false";
+    return process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS === "true";
   });
 
   React.useEffect(() => {
     fetch(apiUrl("/api/v1/auth/system-config"))
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("config error");
+        return res.json();
+      })
       .then((data) => {
-        if (typeof data.show_demo_credentials === "boolean") {
-          setShowDemoAccounts(data.show_demo_credentials);
+        if (data && data.show_demo_credentials === true) {
+          setShowDemoAccounts(true);
+        } else {
+          setShowDemoAccounts(false);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setShowDemoAccounts(false);
+      });
   }, []);
 
   // Quick fill accounts for testing

@@ -9,6 +9,7 @@ import io
 import base64
 
 from app.db.session import get_db
+from app.core.config import settings
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.models.user import User, Role, UserRole, AuditLog, Notification
 from app.schemas.user import (
@@ -38,11 +39,12 @@ def format_user_out(user: User) -> UserOut:
 
 @router.get("/system-config")
 def get_system_auth_config():
-    show_demo = os.getenv("SHOW_DEMO_CREDENTIALS", "true").lower() in ["true", "1", "yes"]
-    app_env = os.getenv("APP_ENV", "demo").lower()
+    is_prod = settings.APP_ENV.lower() in ["production", "prod"]
+    # In production, demo credentials must ALWAYS be disabled for enterprise security
+    show_demo = settings.SHOW_DEMO_CREDENTIALS and not is_prod
     return {
-        "show_demo_credentials": show_demo and app_env != "production",
-        "app_env": app_env
+        "show_demo_credentials": show_demo,
+        "app_env": settings.APP_ENV
     }
 
 @router.post("/login", response_model=Token)

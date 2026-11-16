@@ -53,6 +53,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS: ${SHOW_DEMO_CREDENTIALS:-false}
     container_name: phillip_frontend
     restart: always
     depends_on:

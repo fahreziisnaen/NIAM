@@ -16,6 +16,10 @@ class Settings(BaseSettings):
         f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'phillip_assets.db').replace(chr(92), '/')}"
     )
     
+    # Environment & Demo settings (Defaults strictly to production-safe values)
+    APP_ENV: str = os.getenv("APP_ENV", "production")
+    SHOW_DEMO_CREDENTIALS: bool = os.getenv("SHOW_DEMO_CREDENTIALS", "false").lower() in ("true", "1", "yes")
+
     # Document storage path
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads"))
     
