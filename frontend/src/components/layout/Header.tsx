@@ -31,6 +31,7 @@ import {
   Phone,
   Briefcase,
   Check,
+  Database,
 } from "lucide-react";
 import {
   NotificationDetailModal,
@@ -592,6 +593,19 @@ export function Header({
                     >
                       <FileCheck className="w-3.5 h-3.5 text-slate-600 shrink-0" />
                       <span>Security & Audit Logs</span>
+                    </button>
+
+                    {/* 6. Backup & Disaster Recovery */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        if (onNavigate) onNavigate("settings", "backup");
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg flex items-center space-x-2 transition-colors cursor-pointer"
+                    >
+                      <Database className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>Backup & Disaster Recovery</span>
                     </button>
 
                     {/* 6. Sign Out */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle, Eye, Database, Download, HardDrive } from "lucide-react";
+import { Settings, Users, Shield, History, Key, Check, Plus, AlertCircle, ShieldCheck, ShieldAlert, Smartphone, RefreshCw, Trash2, Send, Mail, BellRing, Edit2, X, Lock, CheckCircle, Eye, Database, Download, HardDrive, Upload, Server, FileText, CheckCircle2, AlertTriangle } from "lucide-react";
 import { TwoFactorSetupModal } from "@/components/auth/TwoFactorSetupModal";
 import { AlertRulesView } from "@/components/views/AlertRulesView";
 import { apiUrl } from "@/lib/api";
@@ -13,12 +13,12 @@ interface SettingsViewProps {
 }
 
 export function SettingsView({ initialTab = "users", currentUser, onRefreshUser }: SettingsViewProps) {
-  const [activeSubTab, setActiveSubTab] = useState<"users" | "roles" | "audit" | "system" | "alerts">(
-    initialTab === "roles" || initialTab === "audit" || initialTab === "system" || initialTab === "alerts" ? initialTab : "users"
+  const [activeSubTab, setActiveSubTab] = useState<"users" | "roles" | "audit" | "system" | "alerts" | "backup">(
+    initialTab === "roles" || initialTab === "audit" || initialTab === "system" || initialTab === "alerts" || initialTab === "backup" ? initialTab : "users"
   );
 
   useEffect(() => {
-    if (initialTab === "roles" || initialTab === "audit" || initialTab === "system" || initialTab === "users" || initialTab === "alerts") {
+    if (initialTab === "roles" || initialTab === "audit" || initialTab === "system" || initialTab === "users" || initialTab === "alerts" || initialTab === "backup") {
       setActiveSubTab(initialTab as any);
     }
   }, [initialTab]);
@@ -117,6 +117,34 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
   };
 
   const [downloadingBackup, setDownloadingBackup] = useState(false);
+  const [backupSummary, setBackupSummary] = useState<{
+    counts: Record<string, number>;
+    database_type: string;
+    system_status: string;
+  } | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreResult, setRestoreResult] = useState<any | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+
+  const loadBackupSummary = async () => {
+    setLoadingSummary(true);
+    try {
+      const token = getAuthToken();
+      const res = await fetch(apiUrl("/api/v1/system/backup/summary"), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBackupSummary(data);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
 
   const handleDownloadBackup = async () => {
     setDownloadingBackup(true);
@@ -141,6 +169,48 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
       alert(err.message || "Failed to download backup");
     } finally {
       setDownloadingBackup(false);
+    }
+  };
+
+  const handleRestoreSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restoreFile) {
+      setRestoreError("Please select a valid .json backup file to restore.");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to restore database records from ${restoreFile.name}? This will synchronize data into the live database.`)) {
+      return;
+    }
+
+    setIsRestoring(true);
+    setRestoreError(null);
+    setRestoreResult(null);
+
+    try {
+      const token = getAuthToken();
+      const formData = new FormData();
+      formData.append("file", restoreFile);
+
+      const res = await fetch(apiUrl("/api/v1/system/backup/restore"), {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to restore database from backup file.");
+      }
+
+      setRestoreResult(data);
+      setRestoreFile(null);
+      loadBackupSummary();
+    } catch (err: any) {
+      setRestoreError(err.message || "An error occurred during restoration.");
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -219,6 +289,12 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
     loadAuditLogs();
     loadAlertSettings();
   }, []);
+
+  useEffect(() => {
+    if (activeSubTab === "backup") {
+      loadBackupSummary();
+    }
+  }, [activeSubTab]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -406,6 +482,7 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
           { id: "alerts", label: "Alert Automation & Rules", icon: BellRing },
           { id: "audit", label: "Audit Logs", icon: History },
           { id: "system", label: "System Configuration", icon: Settings },
+          { id: "backup", label: "Backup & Restore", icon: Database },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -1269,6 +1346,285 @@ export function SettingsView({ initialTab = "users", currentUser, onRefreshUser 
       {activeSubTab === "alerts" && (
         <div className="pt-2">
           <AlertRulesView />
+        </div>
+      )}
+
+      {/* Subtab: Backup & Restore */}
+      {activeSubTab === "backup" && (
+        <div className="space-y-6 pt-2">
+          {/* Live PostgreSQL Health & Stats Banner */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">
+                    Database Storage & Disaster Recovery
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Continuous PostgreSQL persistence, automated snapshot exports, and live restoration management.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-[11px] bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-semibold border border-emerald-200 flex items-center space-x-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{backupSummary?.database_type || "PostgreSQL 16"} • {backupSummary?.system_status || "Healthy & Persistent"}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={loadBackupSummary}
+                  disabled={loadingSummary}
+                  className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                  title="Refresh database record counts"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingSummary ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Record Counts Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">VLAN Networks</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.vlans ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">IP Allocations</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.ip_addresses ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">Hardware & VMs</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.assets ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">Sites & Locations</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.locations ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">Hardware Vendors</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.vendors ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">Active Contracts</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.contracts ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">Topology Links</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.network_connections ?? "--"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+                <div className="text-[11px] text-slate-500 font-medium">Alert Automation</div>
+                <div className="text-lg font-bold text-slate-800 font-mono">
+                  {backupSummary?.counts?.alert_rules ?? "--"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Export & Restore Side-by-Side Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 1-Click Backup Export Card */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                    <Download className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Export System Backup Snapshot</h4>
+                    <p className="text-xs text-slate-500">Download complete structured JSON snapshot to your local computer.</p>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-2 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                  <div className="font-semibold text-slate-800">Included in this export:</div>
+                  <ul className="list-disc list-inside space-y-1 text-slate-600 text-[11px]">
+                    <li>VLAN subnets, gateways, and configurations</li>
+                    <li>IPAM address allocations, hostnames, and MAC bindings</li>
+                    <li>Hardware assets, network devices, and specifications</li>
+                    <li>Office and datacenter locations with contact details</li>
+                    <li>Approved hardware vendors and service contacts</li>
+                    <li>Maintenance and warranty contracts with SLA dates</li>
+                    <li>Configured notification rules and dispatch channels</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadBackup}
+                  disabled={downloadingBackup}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {downloadingBackup ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Generating & Downloading Backup...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download Full Database Backup (.json)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Restore from File Card */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Restore Database from Backup</h4>
+                    <p className="text-xs text-slate-500">Upload a previously exported JSON backup file to restore records.</p>
+                  </div>
+                </div>
+
+                {restoreError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <span>{restoreError}</span>
+                  </div>
+                )}
+
+                {restoreResult && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 space-y-1">
+                    <div className="flex items-center space-x-1.5 font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{restoreResult.message}</span>
+                    </div>
+                    {restoreResult.restored_counts && (
+                      <div className="text-[11px] text-emerald-700 grid grid-cols-2 gap-1 pt-1 font-mono">
+                        {Object.entries(restoreResult.restored_counts).map(([k, v]) => (
+                          <div key={k}>
+                            • {k.replace("_", " ")}: <strong>{String(v)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <form id="restoreForm" onSubmit={handleRestoreSubmit} className="space-y-3">
+                  <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-xl p-4 text-center transition-colors">
+                    <input
+                      type="file"
+                      id="backupFileInput"
+                      accept=".json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setRestoreFile(file);
+                        setRestoreError(null);
+                        setRestoreResult(null);
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="backupFileInput"
+                      className="cursor-pointer flex flex-col items-center justify-center space-y-1.5"
+                    >
+                      <FileText className="w-6 h-6 text-slate-400" />
+                      <span className="text-xs font-semibold text-slate-700">
+                        {restoreFile ? restoreFile.name : "Select or drag .json backup file"}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {restoreFile ? `${(restoreFile.size / 1024).toFixed(1)} KB` : "Accepts JSON backup snapshots generated by PSHK NAMS"}
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 flex items-start space-x-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Warning:</strong> Restoring records will upsert existing configurations and restore missing inventory. Only Super Administrators can execute database restoration.
+                    </span>
+                  </div>
+                </form>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  form="restoreForm"
+                  disabled={!restoreFile || isRestoring}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isRestoring ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Validating & Restoring Database...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Execute Database Restore</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Server Host CLI & Automated Cron Card */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+            <div className="flex items-center space-x-2">
+              <Server className="w-4 h-4 text-indigo-600" />
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Production Host CLI Utilities & Daily Automated Cron Backups
+              </h4>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              For full bare-metal disaster recovery (including uploaded document attachments and exact binary PostgreSQL database dumps), shell scripts are provided in the repository root directory.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <div className="bg-slate-900 text-slate-100 rounded-lg p-3 font-mono text-[11px] space-y-2">
+                <div className="text-slate-400 font-sans font-semibold text-xs text-white">Manual CLI Backup Command:</div>
+                <div className="text-emerald-400">./backup.sh</div>
+                <div className="text-[10px] text-slate-400">
+                  Dumps PostgreSQL to <span className="text-slate-300">backups/db_backup_*.sql.gz</span> and archives <span className="text-slate-300">/app/uploads</span> to <span className="text-slate-300">backups/uploads_backup_*.tar.gz</span> (keeps last 30 backups).
+                </div>
+              </div>
+
+              <div className="bg-slate-900 text-slate-100 rounded-lg p-3 font-mono text-[11px] space-y-2">
+                <div className="text-slate-400 font-sans font-semibold text-xs text-white">Interactive CLI Disaster Restore:</div>
+                <div className="text-blue-400">./restore.sh</div>
+                <div className="text-[10px] text-slate-400">
+                  Presents interactive backup selector, pauses backend container, restores database dump into PostgreSQL, and safely restarts the service.
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 text-xs text-slate-600 space-y-1">
+              <span className="font-semibold text-slate-800">Automated Daily Nightly Backup (Cron Example):</span>
+              <div className="font-mono text-[11px] bg-white p-2 rounded border border-slate-200 text-slate-800 overflow-x-auto">
+                0 2 * * * cd /home/NIAM &amp;&amp; ./backup.sh &gt;&gt; /var/log/nams_backup.log 2&gt;&amp;1
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

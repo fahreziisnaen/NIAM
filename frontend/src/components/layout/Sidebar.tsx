@@ -497,6 +497,7 @@ export function Sidebar({
                     { id: "alerts", label: "Alert Automation & Rules" },
                     { id: "audit", label: "Audit Logs" },
                     { id: "system", label: "System Configuration" },
+                    { id: "backup", label: "Backup & Restore" },
                   ].map((item) => {
                     const isActive = currentTab === "settings" && subCategory === item.id;
                     return (
